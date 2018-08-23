@@ -1,0 +1,9 @@
+*.csv
+*.xls
+*.xlsx
+.idea
+__pycache__
+*.pyc
+boundary-data.json
+*.sql
+.DS_Store
