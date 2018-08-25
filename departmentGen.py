@@ -41,7 +41,7 @@ response = input("Do you want to append the data in repo (y/[n])?")
 if response.lower() == "y":
     deps_existing["Department"].extend(deps)
 
-    with open(MDMS_DESIGNATION_JSON, "w") as f:
+    with open(MDMS_DEPARTMENT_JSON, "w") as f:
         f.write(json.dumps(deps_existing, indent=2))
     print("Added the departments to MDMS data")
 else:

@@ -41,9 +41,9 @@ for row in c:
     area2 = copy.deepcopy(row)
     area3 = copy.deepcopy(row)
 
-    area1["areaType"] = "Area1"
-    area2["areaType"] = "Area2"
-    area3["areaType"] = "Area3"
+    area1["areaType"] = "AREA1"
+    area2["areaType"] = "AREA2"
+    area3["areaType"] = "AREA3"
 
     area1["unitRate"] = float(area1["Area 1"])
     area2["unitRate"] = float(area2["Area 2"])
@@ -145,12 +145,22 @@ for row in level2_rows:
         level3_rows.append(unoccupied_row)
     level3_rows.append(row)
 
-print(level3_rows)
+# print(level3_rows)
 
 f.close()
 
-f = io.open("review.csv", encoding="utf-8", mode="w")
-c =  csv.DictWriter(f, review_headers)
+f = io.open("billing_slab_generated.csv", encoding="utf-8", mode="w")
+c = csv.DictWriter(f, review_headers)
 c.writeheader()
 c.writerows(level3_rows)
 f.close()
+
+print("Created billing_slab_generated.csv")
+
+# insert_query = """
+# INSERT INTO public.eg_pt_billingslab_v2 (id, tenantid, propertytype, propertysubtype, usagecategorymajor, usagecategoryminor, usagecategorysubminor, usagecategorydetail, ownershipcategory, subownershipcategory, fromfloor, tofloor, areatype, occupancytype, fromplotsize, toplotsize, unitrate, createdby, createdtime, lastmodifiedby, lastmodifiedtime, ispropertymultifloored, unbuiltunitrate, arvpercent) VALUES;
+# """
+#
+# tenant_id = "pb.nawanshahr"
+#
+# row_template = "('{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', {}, {}, '{}', )"
