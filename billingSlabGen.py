@@ -31,11 +31,13 @@ def get_slab_template():
 
 from common import *
 
-access_token = login_egov("001", "9872129999", "pb.amritsar")["access_token"]
+# access_token = login_egov("001", "9872129999", "pb.amritsar")["access_token"]
+access_token = login_egov("DEVLME", "12345678", "pb.amritsar")["access_token"]
 print(access_token)
 
 dfs, wks = open_google_spreadsheet(
-    "https://docs.google.com/spreadsheets/d/1uSuV0azrEVlDj2422Gd1IxMjFDeu55lCHOj2ListV6U/edit?ts=5b7168d7#gid=1486766778",
+    # "https://docs.google.com/spreadsheets/d/1uSuV0azrEVlDj2422Gd1IxMjFDeu55lCHOj2ListV6U/edit?ts=5b7168d7#gid=1486766778",
+    "https://docs.google.com/spreadsheets/d/1h2VMSvwoP28nTp_d0kDameundtRIi-MkQM9w4EHcv1k/edit#gid=0",
     "Billing slab_test")
 
 tenant_id = 'pb.nawanshahr'
@@ -101,5 +103,5 @@ def process_row(row):
         print(ex)
 
 
-sheet[1880:].apply(process_row, axis=1)
+sheet[:].apply(process_row, axis=1)
 print("\n".join(status))

@@ -18,7 +18,7 @@ tenant_id = "pb." + city.lower()
 from common import login_egov
 
 auth_token = login_egov("TESTGRO1", "12345678","pb.jalandhar", "EMPLOYEE")["access_token"]
-start_row = 9
+start_row = 1
 
 with open(sheet_name) as csvfile:
     readCSV = csv.reader(csvfile, delimiter=',')
