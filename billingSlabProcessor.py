@@ -98,10 +98,22 @@ for row in rows:
 #
 # For { UsageCategoryDetail = Malls or MarriagePalace or Multiplex } all rates are same as { PropertySubType = INDEPENDENTPROPERTY} and { FromFloor = 0&ToFloor=0}
 
+f = io.open("level1.csv", encoding="utf-8", mode="w")
+c = csv.DictWriter(f, review_headers)
+c.writeheader()
+c.writerows(level1_rows)
+f.close()
+
+
 level2_rows = []
 
 for row in level1_rows:
+    if row["OccupancyType"] == "RENTED":
+        level2_rows.append(row)
+        continue
+
     if row["PropertySubType"] == "SHAREDPROPERTY":
+
         if row["isPropertyMultiFloored"] == "FALSE":
             continue
 
@@ -135,6 +147,13 @@ for row in level1_rows:
 
     level2_rows.append(row)
 
+f = io.open("level2.csv", encoding="utf-8", mode="w")
+c = csv.DictWriter(f, review_headers)
+c.writeheader()
+c.writerows(level2_rows)
+f.close()
+
+
 level3_rows = []
 for row in level2_rows:
     if row["OccupancyType"] == "SELFOCCUPIED":
@@ -149,7 +168,7 @@ for row in level2_rows:
 
 f.close()
 
-f = io.open("billing_slab_generated.csv", encoding="utf-8", mode="w")
+f = io.open("level3.csv", encoding="utf-8", mode="w")
 c = csv.DictWriter(f, review_headers)
 c.writeheader()
 c.writerows(level3_rows)
