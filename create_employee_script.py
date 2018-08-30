@@ -3,11 +3,12 @@ import config
 import csv
 from pathlib import Path
 
-city = "Amritsar"
+city = "Nawanshahr"
 
 # host = "https://mseva-uat.lgpunjab.gov.in"
 # host = "https://mseva.lgpunjab.gov.in"
 host = "https://egov-micro-qa.egovernments.org"
+# host = "https://mseva.lgpunjab.gov.in"
 config.HOST = host
 
 
@@ -17,7 +18,11 @@ tenant_id = "pb." + city.lower()
 
 from common import login_egov
 
-auth_token = login_egov("TESTGRO1", "12345678","pb.jalandhar", "EMPLOYEE")["access_token"]
+# auth_token = login_egov("TESTGRO1", "12345678","pb.jalandhar", "EMPLOYEE")["access_token"]
+# auth_token = login_egov("SYSTEM", "12345678","pb.jalandhar", "EMPLOYEE")["access_token"]
+# auth_token = login_egov("SYSTEM", "demo","pb.jalandhar", "EMPLOYEE")["access_token"]
+# auth_token = login_egov("TESTPGADMIN", "123456789","pb.phagwara", "EMPLOYEE")["access_token"]
+# auth_token = login_egov("ajay", "demo","panavel", "EMPLOYEE")["access_token"]
 start_row = 1
 
 with open(sheet_name) as csvfile:

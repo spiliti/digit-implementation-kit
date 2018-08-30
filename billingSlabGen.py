@@ -32,7 +32,8 @@ def get_slab_template():
 from common import *
 
 # access_token = login_egov("001", "9872129999", "pb.amritsar")["access_token"]
-access_token = login_egov("DEVLME", "12345678", "pb.amritsar")["access_token"]
+access_token = login_egov("013", "8054005092", "pb.amritsar")["access_token"]
+# access_token = login_egov("DEVLME", "12345678", "pb.amritsar")["access_token"]
 print(access_token)
 
 dfs, wks = open_google_spreadsheet(
@@ -40,7 +41,7 @@ dfs, wks = open_google_spreadsheet(
     "https://docs.google.com/spreadsheets/d/1h2VMSvwoP28nTp_d0kDameundtRIi-MkQM9w4EHcv1k/edit#gid=0",
     "Billing slab_test")
 
-tenant_id = 'pb.nawanshahr'
+tenant_id = 'pb.sangrur'
 sheet = get_sheet(dfs, "Billing slab_test")
 wk = wks.worksheet("Billing slab_test")
 
@@ -62,10 +63,11 @@ def process_row(row):
         data = get_slab_template()
         data["BillingSlab"][0]["tenantId"] = tenant_id
         data["RequestInfo"]["authToken"] = access_token
-        created = row[indexes["Created"]]
+        if indexes["Created"] is not None:
+            created = row[indexes["Created"]]
 
-        if created in ["Existing", "Created"]:
-            return
+            if created in ["Existing", "Created"]:
+                return
 
         for field in data["BillingSlab"][0].keys():
             if indexes[field] is not None:
