@@ -16,19 +16,21 @@ config.TENANT_ID = config.TENANT + "." + config.CITY_NAME.lower()
 config.SHEET_NAME = config.CITY_NAME.lower() + ".xlsx"
 config.SHEET = config.BOUNDARIES_FOLDER / config.SHEET_NAME
 
+config.SHEET_DEPARTMENTS = "Employee-Position"
+
+config.SHEET_DESIGNATION = config.SHEET_DEPARTMENTS
+config.SHEET_EMPLOYEE = config.SHEET_DEPARTMENTS
+config.SHEET_TENANT_DETAILS = "City"
+
+config.COLUMN_DESIGNATION = "Designation"
+config.COLUMN_DEPARTMENT = "Department"
+
 
 def load_admin_boundary_config():
     config.SHEET_ZONES = "Admin Zone"
     config.SHEET_WARDS = "Admin Block"
     config.SHEET_LOCALITY = "Locality"
 
-    config.SHEET_DEPARTMENTS = "Employee-Position"
-
-    config.SHEET_DESIGNATION = config.SHEET_DEPARTMENTS
-    config.SHEET_EMPLOYEE = config.SHEET_DEPARTMENTS
-
-    config.COLUMN_DESIGNATION = "Designation"
-    config.COLUMN_DEPARTMENT = "Department"
 
     config.COLUMN_WARD_CODE = "Block/Ward Code"
     config.COLUMN_WARD_NAME = "Block/Ward Name"
@@ -47,15 +49,6 @@ def load_revenue_boundary_config():
     config.SHEET_ZONES = "Revenue Zone"
     config.SHEET_WARDS = "Revenue Block or Ward"
     config.SHEET_LOCALITY = "Locality"
-
-    config.SHEET_DEPARTMENTS = "Employee-Position"
-    config.SHEET_TENANT_DETAILS = "City"
-
-    config.SHEET_DESIGNATION = config.SHEET_DEPARTMENTS
-    config.SHEET_EMPLOYEE = config.SHEET_DEPARTMENTS
-
-    config.COLUMN_DESIGNATION = "Designation"
-    config.COLUMN_DEPARTMENT = "Department"
 
     config.COLUMN_WARD_CODE = "Rev Block/Ward Code"
     config.COLUMN_WARD_NAME = "Rev Block/Ward Name"
