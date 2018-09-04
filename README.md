@@ -12,8 +12,6 @@ from pathlib import Path
 import os
 from .global_config import config
 
-print(config)
-
 config.BOUNDARIES_FOLDER = Path(r"/Users/tarunlalwani/Desktop/eGovernments/implementation/scripts/source/")
 
 config.MDMS_LOCATION = Path(r"/Users/tarunlalwani/Desktop/eGovernments/repos/punjab-mdms-data-uat/data/pb")
