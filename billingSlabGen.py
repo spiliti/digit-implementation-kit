@@ -1,47 +1,13 @@
-def get_slab_template():
-    return {
-        "RequestInfo": {
-            "authToken": ""
-        },
-        "BillingSlab": [
-            {
-                "tenantId": "",
-                "propertyType": "",
-                "propertySubType": "",
-                "usageCategoryMajor": "",
-                "usageCategoryMinor": "",
-                "usageCategorySubMinor": "",
-                "usageCategoryDetail": "",
-                "ownerShipCategory": "",
-                "subOwnerShipCategory": "",
-                "areaType": "",
-                "fromPlotSize": -100,
-                "toPlotSize": -100,
-                "occupancyType": "",
-                "fromFloor": -100,
-                "toFloor": -100,
-                "unitRate": -100,
-                "isPropertyMultiFloored": False,
-                "unBuiltUnitRate": -100,
-                "arvPercent": -100
-            }
-        ]
-    }
-
-
 from common import *
 
-# access_token = login_egov("001", "9872129999", "pb.amritsar")["access_token"]
-access_token = login_egov("013", "8054005092", "pb.amritsar")["access_token"]
-# access_token = login_egov("DEVLME", "12345678", "pb.amritsar")["access_token"]
-print(access_token)
+access_token = superuser_login()["access_token"]
 
 dfs, wks = open_google_spreadsheet(
     # "https://docs.google.com/spreadsheets/d/1uSuV0azrEVlDj2422Gd1IxMjFDeu55lCHOj2ListV6U/edit?ts=5b7168d7#gid=1486766778",
     "https://docs.google.com/spreadsheets/d/1h2VMSvwoP28nTp_d0kDameundtRIi-MkQM9w4EHcv1k/edit#gid=0",
     "Billing slab_test")
 
-tenant_id = 'pb.sangrur'
+tenant_id = 'pb.kurali'
 sheet = get_sheet(dfs, "Billing slab_test")
 wk = wks.worksheet("Billing slab_test")
 
@@ -82,7 +48,7 @@ def process_row(row):
 
                 data["BillingSlab"][0][field] = val
         import requests
-        res = requests.post(URL_BILLING_SLAB_CREATE, json=data)
+        res = requests.post(config.URL_BILLING_SLAB_CREATE, json=data)
         # print(json.dumps(data, indent=2))
 
         if res.status_code == 400 and res.json()["Errors"][0]["code"] == "EG_PT_BILLING_SLAB_DUPLICATE":

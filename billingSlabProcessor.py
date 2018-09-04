@@ -11,21 +11,12 @@ review_headers = ["PropertyType", "UsageCategoryMajor", "UsageCategoryMinor", "U
 
 from common import *
 
-# access_token = login_egov("001", "9872129999", "pb.amritsar")["access_token"]
-# print(access_token)
-
 dfs, wks = open_google_spreadsheet(
     "https://docs.google.com/spreadsheets/d/1Grd20oHLoC4B5DfuMY8Yud31w7uKY09gM22E2LbH3cs/edit?ts=5b7d3b2f#gid=0",
-    "Sheet1")
-
-dfs['Sheet1'].to_csv('slabs.csv', index=False, index_label=False)
+    "Category C")
 
 
-# raw = dfs['Sheet1']
-#
-# raw.apply(lambda row:
-#           print(row)
-#           , axis=1)
+dfs['Category C'].to_csv('slabs.csv', index=False, index_label=False)
 
 import io
 import csv
@@ -109,6 +100,10 @@ level2_rows = []
 
 for row in level1_rows:
     if row["OccupancyType"] == "RENTED":
+        if row["isPropertyMultiFloored"] == "TRUE" and row["FromFloor"]=="0" and row["ToFloor"] == "0":
+            row["FromFloor"] = -10
+            row["ToFloor"] = 31
+
         level2_rows.append(row)
         continue
 
