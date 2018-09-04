@@ -78,7 +78,7 @@ tenant_object = {
     "city": {
         "name": config.CITY_NAME,
         "localName": local_name,
-        "districtCode": str(int(float(district_code))),
+        "districtCode": str(int(float(district_code))) if district_code else None,
         "districtName": district_name,
         "regionName": region_name,
         "ulbGrade": None,
