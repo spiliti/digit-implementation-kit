@@ -1,4 +1,4 @@
-activate = False
+activate = True
 
 tenants = ["nawanshahr", "sangrur"]
 module = "PGR"
