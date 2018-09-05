@@ -1,28 +1,18 @@
 import requests
-import config
 import csv
 from pathlib import Path
+from common import superuser_login
+from config import config
 
 city = "Nawanshahr"
-
-# host = "https://mseva-uat.lgpunjab.gov.in"
-# host = "https://mseva.lgpunjab.gov.in"
-host = "https://egov-micro-qa.egovernments.org"
-# host = "https://mseva.lgpunjab.gov.in"
-config.HOST = host
-
 
 sheets = Path("employees")
 sheet_name = sheets / (city.lower() + ".csv")
 tenant_id = "pb." + city.lower()
 
-from common import login_egov
 
-# auth_token = login_egov("TESTGRO1", "12345678","pb.jalandhar", "EMPLOYEE")["access_token"]
-# auth_token = login_egov("SYSTEM", "12345678","pb.jalandhar", "EMPLOYEE")["access_token"]
-# auth_token = login_egov("SYSTEM", "demo","pb.jalandhar", "EMPLOYEE")["access_token"]
-# auth_token = login_egov("TESTPGADMIN", "123456789","pb.phagwara", "EMPLOYEE")["access_token"]
-# auth_token = login_egov("ajay", "demo","panavel", "EMPLOYEE")["access_token"]
+# For UAT
+auth_token = superuser_login()["access_token"]
 start_row = 1
 
 with open(sheet_name) as csvfile:
@@ -45,7 +35,7 @@ with open(sheet_name) as csvfile:
             is_primary = False
 
         post_data = {"RequestInfo":{"apiId":"org.egov.pgr","ver":"1.0","ts":"24-04-2016 12:12:12","action":"asd","did":"4354648646","key":"xyz","msgId":None,"authToken":auth_token},"Employee":{"code":row[8],"dateOfAppointment":row[4],"employeeStatus":"7","employeeType":"1","assignments":details,"jurisdictions":["100"],"physicallyDisabled":False,"transferredEmployee":False,"medicalReportProduced":True,"languagesKnown":[],"maritalStatus":"MARRIED","ifscCode":"ffwe","documents":[],"serviceHistory":[],"probation":[],"regularisation":[],"technical":[],"education":[],"test":[],"user":{"roles":[{"code":row[10],"name":row[11],"tenantId":tenant_id}],"userName":row[8],"name":row[0],"gender":row[1],"mobileNumber":row[2],"emailId":"","permanentAddress":city,"permanentCity":"Punjab","permanentPinCode":"24324","correspondenceCity":city,"correspondencePinCode":"34353","correspondenceAddress":tenant_id,"active":True,"dob":row[3],"locale":None,"signature":"fghdfgewfg374823","type":"EMPLOYEE","password":row[9],"tenantId":tenant_id},"tenantId": tenant_id}}
-        post_response = requests.post(url=host + '/hr-employee-v2/employees/_create', headers=headers, json=post_data)
+        post_response = requests.post(url=config.HOST + '/hr-employee-v2/employees/_create', headers=headers, json=post_data)
         print("==================================================")
         print(post_data)
         print("--------")

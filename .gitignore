@@ -8,3 +8,4 @@ boundary-data.json
 *.sql
 .DS_Store
 sql/tenants
+work.py

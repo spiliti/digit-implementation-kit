@@ -1,24 +1,23 @@
-import json
 from math import isnan
 from pathlib import Path
 
 from common import *
-from config import *
+from config import config
 
-dfs = open_excel_file(SHEET)
+dfs = open_excel_file(config.SHEET)
 
 designations = {}
-for val in json.load(open(MDMS_DESIGNATION_JSON))["Designation"]:
+for val in json.load(open(config.MDMS_DESIGNATION_JSON))["Designation"]:
     designations[clean_name(val["code"])] = val["name"]
     designations[clean_name(val["name"])] = val["code"]
 
 
 departments = {}
-for val in json.load(open(MDMS_DEPARTMENT_JSON))["Department"]:
+for val in json.load(open(config.MDMS_DEPARTMENT_JSON))["Department"]:
     departments[clean_name(val["code"])] = val["name"]
     departments[clean_name(val["name"])] = val["code"]
 
-employees = get_sheet(dfs, SHEET_EMPLOYEE)
+employees = get_sheet(dfs, config.SHEET_EMPLOYEE)
 
 # Employee Name	Gender	Mobile	DOB	Start Date	End Date	Department	Designation	Code	Password	Role Code	Role Name	Position
 # Name*	Gender*	Mobile Number*	DOB	Appointed From Date*	Appointed To Date*	Department*	Designation*	Employee Code*	Mobile Number*
@@ -94,5 +93,5 @@ for _, row in employees.iterrows():
 
     rows.append(",".join(row_data))
 
-with open(Path("employees/" + CITY_NAME.lower() + ".csv"), "w") as f:
+with open(Path("employees/" + config.CITY_NAME.lower() + ".csv"), "w") as f:
     f.write("\n".join(rows))
