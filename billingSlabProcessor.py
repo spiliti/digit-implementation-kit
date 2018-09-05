@@ -2,25 +2,35 @@ import itertools
 
 row = {}
 
-source_headers = ["PropertyType", "UsageCategoryMajor", "UsageCategoryMinor", "UsageCategorySubMinor", "UsageCategoryDetail", "PropertySubType", "OwnershipCategory", "SubOwnershipCategory", "isPropertyMultiFloored", "FromPlotSize", "ToPlotSize", "OccupancyType", "FromFloor", "ToFloor", "Area 1", "Area 2", "Area 3", "arvPercent"]
+source_headers = ["PropertyType", "UsageCategoryMajor", "UsageCategoryMinor", "UsageCategorySubMinor",
+                  "UsageCategoryDetail", "PropertySubType", "OwnershipCategory", "SubOwnershipCategory",
+                  "isPropertyMultiFloored", "FromPlotSize", "ToPlotSize", "OccupancyType", "FromFloor", "ToFloor",
+                  "Area 1", "Area 2", "Area 3", "arvPercent"]
 
-desitination_headers = ["propertyType", "usageCategoryMajor", "usageCategoryMinor", "usageCategorySubMinor", "usageCategoryDetail", "propertySubType", "ownerShipCategory", "subOwnerShipCategory", "isPropertyMultiFloored", "fromPlotSize", "toPlotSize", "occupancyType", "fromFloor", "toFloor", "areaType", "unitRate", "unBuiltUnitRate", "arvPercent"]
+desitination_headers = ["propertyType", "usageCategoryMajor", "usageCategoryMinor", "usageCategorySubMinor",
+                        "usageCategoryDetail", "propertySubType", "ownerShipCategory", "subOwnerShipCategory",
+                        "isPropertyMultiFloored", "fromPlotSize", "toPlotSize", "occupancyType", "fromFloor", "toFloor",
+                        "areaType", "unitRate", "unBuiltUnitRate", "arvPercent"]
 
-
-review_headers = ["PropertyType", "UsageCategoryMajor", "UsageCategoryMinor", "UsageCategorySubMinor", "UsageCategoryDetail", "PropertySubType", "OwnershipCategory", "SubOwnershipCategory", "isPropertyMultiFloored", "FromPlotSize", "ToPlotSize", "OccupancyType", "FromFloor", "ToFloor", "areaType", "unitRate", "unBuiltUnitRate", "arvPercent"]
+review_headers = ["PropertyType", "UsageCategoryMajor", "UsageCategoryMinor", "UsageCategorySubMinor",
+                  "UsageCategoryDetail", "PropertySubType", "OwnershipCategory", "SubOwnershipCategory",
+                  "isPropertyMultiFloored", "FromPlotSize", "ToPlotSize", "OccupancyType", "FromFloor", "ToFloor",
+                  "areaType", "unitRate", "unBuiltUnitRate", "arvPercent"]
 
 from common import *
 
+TAB_NAME = 'Category C'
+
 dfs, wks = open_google_spreadsheet(
-    "https://docs.google.com/spreadsheets/d/1Grd20oHLoC4B5DfuMY8Yud31w7uKY09gM22E2LbH3cs/edit?ts=5b7d3b2f#gid=0",
-    "Category C")
+    "https://docs.google.com/spreadsheets/d/1Grd20oHLoC4B5DfuMY8Yud31w7uKY09gM22E2LbH3cs/edit?ts=5b8e2d98#gid=771025646",
+    TAB_NAME)
 
-
-dfs['Category C'].to_csv('slabs.csv', index=False, index_label=False)
+dfs[TAB_NAME].to_csv('slabs.csv', index=False, index_label=False)
 
 import io
 import csv
 import copy
+
 f = io.open("slabs.csv", encoding="utf-8")
 c = csv.DictReader(f)
 
@@ -50,6 +60,7 @@ for row in c:
         area.pop("Area 3")
 
     rows.extend([area1, area2, area3])
+    # rows.extend([area1])
 
 level1_rows = []
 for row in rows:
@@ -74,7 +85,6 @@ for row in rows:
 
             level1_rows.append(new_row)
 
-
 # For {PropertySubType= INDEPENDENTPROPERTY} generate slabs for empty land with rate = half of {FromFloor = -10 & ToFloor = -1}
 #
 # For {PropertySubType= INDEPENDENTPROPERTY} & { isPropertyMultiFloored = TRUE} generate slabs for {FromFloor = -10 & ToFloor = -1} with rate = half of {FromFloor = -10 & ToFloor = -1}
@@ -95,12 +105,21 @@ c.writeheader()
 c.writerows(level1_rows)
 f.close()
 
-
 level2_rows = []
 
+
+def fix_row(row):
+    for key, value in row.items():
+        if type(value) is str:
+            fixed_value = value.strip().replace(" ", "").upper()
+            if value != fixed_value:
+                row[key] = fixed_value
+
+
 for row in level1_rows:
+    fix_row(row)
     if row["OccupancyType"] == "RENTED":
-        if row["isPropertyMultiFloored"] == "TRUE" and row["FromFloor"]=="0" and row["ToFloor"] == "0":
+        if row["isPropertyMultiFloored"] == "TRUE" and row["FromFloor"] == "0" and row["ToFloor"] == "0":
             row["FromFloor"] = -10
             row["ToFloor"] = 31
 
@@ -112,7 +131,7 @@ for row in level1_rows:
         if row["isPropertyMultiFloored"] == "FALSE":
             continue
 
-        if row["isPropertyMultiFloored"] == "TRUE" and row["FromFloor"]=="0" and row["ToFloor"] == "0":
+        if row["isPropertyMultiFloored"] == "TRUE" and row["FromFloor"] == "0" and row["ToFloor"] == "0":
             row["FromFloor"] = -10
             row["ToFloor"] = 31
             row["unBuiltUnitRate"] = row["unitRate"]
@@ -136,7 +155,8 @@ for row in level1_rows:
     if row["PropertySubType"] == "INDEPENDENTPROPERTY" and row["UsageCategoryDetail"] == "MALLS":
         row["unBuiltUnitRate"] = row["unitRate"]
 
-    if row["PropertySubType"] == "INDEPENDENTPROPERTY" and row["UsageCategorySubMinor"] in ("ENTERTAINMENT", "EVENTSPACE"):
+    if row["PropertySubType"] == "INDEPENDENTPROPERTY" and row["UsageCategorySubMinor"] in (
+    "ENTERTAINMENT", "EVENTSPACE"):
         if row["UsageCategoryDetail"] in ("ALL", "MARRIAGEPALACE", "MULTIPLEX"):
             row["unBuiltUnitRate"] = row["unitRate"]
 
@@ -147,7 +167,6 @@ c = csv.DictWriter(f, review_headers)
 c.writeheader()
 c.writerows(level2_rows)
 f.close()
-
 
 level3_rows = []
 for row in level2_rows:
