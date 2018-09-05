@@ -1,18 +1,17 @@
-import json
 from common import *
-from config import *
+from config import config
 
-dfs = open_excel_file(SHEET)
+dfs = open_excel_file(config.SHEET)
 
-designations = get_sheet(dfs, SHEET_DESIGNATION)
+designations = get_sheet(dfs, config.SHEET_DESIGNATION)
 
-index_designation = get_column_index(designations, COLUMN_DESIGNATION)
+index_designation = get_column_index(designations, config.COLUMN_DESIGNATION)
 
 new_designations = set()
 
 designations.apply(lambda row: new_designations.add(row[index_designation].strip()), axis=1)
 
-dess_existing = json.load(open(MDMS_DESIGNATION_JSON))
+dess_existing = json.load(open(config.MDMS_DESIGNATION_JSON))
 
 existing_designations = set()
 
@@ -36,7 +35,7 @@ response = input("Do you want to append the data in repo (y/[n])?")
 if response.lower() == "y":
     dess_existing["Designation"].extend(dess)
 
-    with open(MDMS_DESIGNATION_JSON, "w") as f:
+    with open(config.MDMS_DESIGNATION_JSON, "w") as f:
         f.write(json.dumps(dess_existing, indent=2))
 
     print("Added the designations to MDMS data")
