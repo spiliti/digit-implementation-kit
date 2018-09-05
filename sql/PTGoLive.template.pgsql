@@ -2,13 +2,15 @@ delete from egf_accountcodepurpose where tenantid = 'pb.__city__';
 delete from egf_chartofaccount where tenantid = 'pb.__city__';
 delete from egf_instrumentaccountcode where tenantid = 'pb.__city__';
 delete from egf_instrumenttype where tenantid = 'pb.__city__';
-delete from egf_bankaccount where tenantid = 'pb.__city__';
 delete from egbs_taxperiod where tenantid = 'pb.__city__';
 delete from egbs_glcodemaster where tenantid = 'pb.__city__';
 delete from egbs_business_service_details where tenantid = 'pb.__city__';
 delete from egbs_taxheadmaster where tenantid = 'pb.__city__';
+delete from egf_bankaccount where tenantid = 'pb.__city__';
 delete from egf_bankbranch where tenantid = 'pb.__city__';
 
+delete from egf_bank where tenantid = 'pb.__city__';
+delete from egf_fund where tenantid = 'pb.__city__';
 
 -- Data for Name: egf_accountcodepurpose; Type: TABLE DATA; Schema: public; Owner: egovuat
 INSERT INTO egf_accountcodepurpose (id, name, createdby, createddate, lastmodifiedby, lastmodifieddate, version, tenantid) VALUES (nextval('seq_egf_accountcodepurpose'), 'Cheque In Hand', NULL, now(), NULL, now(), NULL, 'pb.__city__');
@@ -89,7 +91,7 @@ INSERT INTO egbs_taxheadmaster (id, tenantid, category, service, name, code, isd
 INSERT INTO egbs_taxheadmaster (id, tenantid, category, service, name, code, isdebit, isactualdemand, orderno, validfrom, validtill, createdby, createdtime, lastmodifiedby, lastmodifiedtime) VALUES (nextval('seq_egbs_taxheadmaster'), 'pb.__city__', 'TAX', 'PT', 'Pt decimal ceiling credit', 'PT_DECIMAL_CEILING_CREDIT', false, true, 99, 1143849600000, 1554076799000, '94', 1535112204758, '94', 1535112204758);
 INSERT INTO egbs_taxheadmaster (id, tenantid, category, service, name, code, isdebit, isactualdemand, orderno, validfrom, validtill, createdby, createdtime, lastmodifiedby, lastmodifiedtime) VALUES (nextval('seq_egbs_taxheadmaster'), 'pb.__city__', 'REBATE', 'PT', 'Pt decimal ceiling debit', 'PT_DECIMAL_CEILING_DEBIT', true, true, 100, 1143849600000, 1554076799000, '94', 1535112204758, '94', 1535112204758);
 
-INSERT INTO egbs_taxheadmaster (id, tenantid, category, service, name, code, isdebit, isactualdemand, orderno, validfrom, validtill, createdby, createdtime, lastmodifiedby, lastmodifiedtime) VALUES (nextval('seq_egbs_taxheadmaster'), 'pb.__city__', 'TAX', 'PT', 'Pt cancer cess', 'PT_CANCER_CESS', true, true, 100, 1143849600000, 1554076799000, '94', 1535112204758, '94', 1535112204758);
+INSERT INTO egbs_taxheadmaster (id, tenantid, category, service, name, code, isdebit, isactualdemand, orderno, validfrom, validtill, createdby, createdtime, lastmodifiedby, lastmodifiedtime) VALUES (nextval('seq_egbs_taxheadmaster'), 'pb.__city__', 'TAX', 'PT', 'Pt cancer cess', 'PT_CANCER_CESS', true, true, 3, 1143849600000, 1554076799000, '94', 1535112204758, '94', 1535112204758);
 
 
 -- Data for Name: egbs_billaccountdetail; Type: TABLE DATA; Schema: public; Owner: egovuat
