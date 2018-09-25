@@ -1,36 +1,37 @@
 from .local import *
 
-config.GOOGLE_AUTH_CONFIG = 'SpreadSheetDBService-2be6caceda84.json'
 
-config.URL_LOGIN = config.HOST + "/user/oauth/token"
-config.URL_BILLING_SLAB_CREATE = config.HOST + "/pt-calculator-v2/billingslab/_create"
+def load_config():
+    config.GOOGLE_AUTH_CONFIG = 'SpreadSheetDBService-2be6caceda84.json'
 
-config.MDMS_DEPARTMENT_JSON = config.MDMS_LOCATION / "common-masters" / "Department.json"
-config.MDMS_DESIGNATION_JSON = config.MDMS_LOCATION / "common-masters" / "Designation.json"
+    config.URL_LOGIN = config.HOST + "/user/oauth/token"
+    config.URL_BILLING_SLAB_CREATE = config.HOST + "/pt-calculator-v2/billingslab/_create"
 
-config.CITY_MODULES_JSON = config.MDMS_LOCATION / "tenant" / "citymodule.json"
-config.TENANT_JSON = config.MDMS_LOCATION / "tenant" / "tenants.json"
+    config.MDMS_DEPARTMENT_JSON = config.MDMS_LOCATION / "common-masters" / "Department.json"
+    config.MDMS_DESIGNATION_JSON = config.MDMS_LOCATION / "common-masters" / "Designation.json"
 
-config.TENANT_ID = config.TENANT + "." + config.CITY_NAME.lower()
+    config.CITY_MODULES_JSON = config.MDMS_LOCATION / "tenant" / "citymodule.json"
+    config.TENANT_JSON = config.MDMS_LOCATION / "tenant" / "tenants.json"
 
-config.SHEET_NAME = config.CITY_NAME.lower() + ".xlsx"
-config.SHEET = config.BOUNDARIES_FOLDER / config.SHEET_NAME
+    config.TENANT_ID = config.TENANT + "." + config.CITY_NAME.lower()
 
-config.SHEET_DEPARTMENTS = "Employee-Position"
+    config.SHEET_NAME = config.CITY_NAME.lower() + ".xlsx"
+    config.SHEET = config.BOUNDARIES_FOLDER / config.SHEET_NAME
 
-config.SHEET_DESIGNATION = config.SHEET_DEPARTMENTS
-config.SHEET_EMPLOYEE = config.SHEET_DEPARTMENTS
-config.SHEET_TENANT_DETAILS = "City"
+    config.SHEET_DEPARTMENTS = "Employee-Position"
 
-config.COLUMN_DESIGNATION = "Designation"
-config.COLUMN_DEPARTMENT = "Department"
+    config.SHEET_DESIGNATION = config.SHEET_DEPARTMENTS
+    config.SHEET_EMPLOYEE = config.SHEET_DEPARTMENTS
+    config.SHEET_TENANT_DETAILS = "City"
+
+    config.COLUMN_DESIGNATION = "Designation"
+    config.COLUMN_DEPARTMENT = "Department"
 
 
 def load_admin_boundary_config():
     config.SHEET_ZONES = "Admin Zone"
     config.SHEET_WARDS = "Admin Block"
     config.SHEET_LOCALITY = "Locality"
-
 
     config.COLUMN_WARD_CODE = "Block/Ward Code"
     config.COLUMN_WARD_NAME = "Block/Ward Name"
@@ -61,3 +62,6 @@ def load_revenue_boundary_config():
     config.COLUMN_LOCALITY_NAME = "Locality Name"
     config.COLUMN_LOCALITY_ADMIN_BLOCK = "Rev Block/Ward Name"
     config.COLUMN_LOCALITY_AREA = "Area Name"
+
+
+load_config()

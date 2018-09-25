@@ -1,6 +1,7 @@
 import json
 import uuid
 
+import numpy
 import pandas as pd
 import re
 import requests
@@ -197,7 +198,8 @@ def create_boundary(config_function, boundary_type):
         "label": "Locality",
         "code": row[index_code].strip(),
         "ward": row[index_admin_block].strip(),
-        "area": "" if current_boundary_type == "ADMIN" else row[index_area].strip().upper().replace(" ", "").replace("-",""),
+        "area": "" if current_boundary_type == "ADMIN" else row[index_area].strip().upper().replace(" ", "").replace(
+            "-", ""),
         "children": []
     }, axis=1)
 
@@ -266,7 +268,7 @@ def create_boundary(config_function, boundary_type):
     print(data)
     import os
 
-    response = input("Do you want to append the data in repo (y/[n])?")
+    response = os.getenv("ASSUME_YES", None) or input("Do you want to append the data in repo (y/[n])?")
 
     if response.lower() == "y":
 
@@ -301,3 +303,18 @@ def create_boundary(config_function, boundary_type):
 
         with open(boundary_path / "boundary-data.json", "w") as f:
             json.dump(existing_boundary_data, f, indent=2)
+
+
+def fix_value(val, default_str="", default_nan=None):
+    if val is None:
+        return default_str
+
+    if type(val) is str and "°" in val:
+        return val.split("°")[0]
+
+    if type(val) is str:
+        return val.strip()
+    elif numpy.isnan(val):
+        return default_nan
+    else:
+        return str(val)
