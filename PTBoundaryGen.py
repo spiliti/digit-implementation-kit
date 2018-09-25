@@ -153,7 +153,7 @@
 #         if len(existing_boundary_data["TenantBoundary"]) == 0:
 #             # should never happen but just in case
 #             existing_boundary_data["TenantBoundary"].append(new_boundary_data)
-#             print("Boundary added")
+#             print("Boundary aydded")
 #         elif len(existing_boundary_data["TenantBoundary"]) == 1:
 #             if existing_boundary_data["TenantBoundary"][0]["hierarchyType"]["code"] == current_boundary_type:
 #                 existing_boundary_data["TenantBoundary"][0] = new_boundary_data
@@ -178,5 +178,9 @@
 from common import create_boundary
 from config import load_revenue_boundary_config
 
+def main():
+    create_boundary(load_revenue_boundary_config, "REVENUE")
 
-create_boundary(load_revenue_boundary_config, "REVENUE")
+
+if __name__ == "__main__":
+    main()

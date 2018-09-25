@@ -19,7 +19,7 @@ review_headers = ["PropertyType", "UsageCategoryMajor", "UsageCategoryMinor", "U
 
 from common import *
 
-TAB_NAME = 'Category C'
+TAB_NAME = 'Category B'
 
 dfs, wks = open_google_spreadsheet(
     "https://docs.google.com/spreadsheets/d/1Grd20oHLoC4B5DfuMY8Yud31w7uKY09gM22E2LbH3cs/edit?ts=5b8e2d98#gid=771025646",
@@ -118,7 +118,7 @@ def fix_row(row):
 
 for row in level1_rows:
     fix_row(row)
-    if row["OccupancyType"] == "RENTED":
+    if row["OccupancyType"] == "RENTED" and row["UsageCategoryMajor"] != "RESIDENTIAL":
         if row["isPropertyMultiFloored"] == "TRUE" and row["FromFloor"] == "0" and row["ToFloor"] == "0":
             row["FromFloor"] = -10
             row["ToFloor"] = 31
@@ -136,9 +136,16 @@ for row in level1_rows:
             row["ToFloor"] = 31
             row["unBuiltUnitRate"] = row["unitRate"]
 
-    if row["PropertySubType"] == "INDEPENDENTPROPERTY" and row["isPropertyMultiFloored"] == "TRUE":
+    if row["UsageCategoryDetail"] == "MARRIAGEPALACE":
+        row["unBuiltUnitRate"] = row["unitRate"]
+
+    if row["PropertySubType"] != "SHAREDPROPERTY" and ((row["PropertySubType"] == "INDEPENDENTPROPERTY" and row["isPropertyMultiFloored"] == "TRUE")\
+            or (row["OccupancyType"] == "RENTED" and row["UsageCategoryMajor"] == "RESIDENTIAL"  and row["FromFloor"] == "0" and row["ToFloor"] == "0")):
         lower_floors = copy.deepcopy(row)
         upper_floors = copy.deepcopy(row)
+
+        if row["UsageCategoryDetail"] == "MARRIAGEPALACE":
+            row["unBuiltUnitRate"] = row["unitRate"]
 
         lower_floors["FromFloor"] = -10
         lower_floors["ToFloor"] = -1
@@ -150,15 +157,16 @@ for row in level1_rows:
         upper_floors["unitRate"] = row["unitRate"] * 0.5
         upper_floors["unBuiltUnitRate"] = row["unitRate"] * 0.5 * 0.5
 
+        if row["PropertySubType"] == "INDEPENDENTPROPERTY" and \
+                row["UsageCategorySubMinor"] in ("ENTERTAINMENT", "EVENTSPACE", "RETAIL"):
+            if row["UsageCategoryDetail"] in ("ALL", "MALLS", "MULTIPLEX", "ESTABLISHMENTSINMULTIPLEX", "ESTABLISHMENTSINMALLS"):
+                lower_floors["unBuiltUnitRate"] = row["unBuiltUnitRate"]
+                lower_floors["unitRate"] = row["unitRate"]
+
+                upper_floors["unBuiltUnitRate"] = row["unBuiltUnitRate"]
+                upper_floors["unitRate"] = row["unitRate"]
+
         level2_rows.extend([lower_floors, upper_floors])
-
-    if row["PropertySubType"] == "INDEPENDENTPROPERTY" and row["UsageCategoryDetail"] == "MALLS":
-        row["unBuiltUnitRate"] = row["unitRate"]
-
-    if row["PropertySubType"] == "INDEPENDENTPROPERTY" and row["UsageCategorySubMinor"] in (
-    "ENTERTAINMENT", "EVENTSPACE"):
-        if row["UsageCategoryDetail"] in ("ALL", "MARRIAGEPALACE", "MULTIPLEX"):
-            row["unBuiltUnitRate"] = row["unitRate"]
 
     level2_rows.append(row)
 
@@ -170,6 +178,7 @@ f.close()
 
 level3_rows = []
 for row in level2_rows:
+
     if row["OccupancyType"] == "SELFOCCUPIED":
         unoccupied_row = copy.deepcopy(row)
         unoccupied_row["OccupancyType"] = "UNOCCUPIED"
