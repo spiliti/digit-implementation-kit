@@ -33,12 +33,12 @@ def main():
     response = os.getenv("ASSUME_YES", None) or input("Do you want to generate the SQL template (y/[n])?")
 
     if response.lower() == "y":
-        with open("../sql/templates/PTGoLive.template.pgsql") as f:
+        with open("../sql/templates/PTGoLive.template.sql") as f:
             data = f.read()
             for key, value in template.items():
                 data = data.replace(key, value)
 
-            with open("../sql/output/PT/PTGoLive.{}.pgsql".format(config.CITY_NAME), mode="w") as w:
+            with open("../sql/output/PT/PTGoLive.{}.sql".format(config.CITY_NAME), mode="w") as w:
                 w.write(data)
     else:
         print("Not generating sql template")
