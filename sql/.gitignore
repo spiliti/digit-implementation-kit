@@ -1,6 +1,3 @@
-!TenantGoLive.template.sql
-!PTGoLive.template.pgsql
-!*.sh
+*.csv
 *.sql
 tenants
-*.pgsql
