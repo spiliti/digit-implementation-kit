@@ -30,15 +30,17 @@ for m in data["citymodule"]:
 if found:
     for tenant in tenants:
         tenant = "pb." + tenant.lower().replace(" ", "")
+
+        if tenant not in tenant_codes:
+            print("Cannot activate tenant. The tenant {} doesn't exists in tenants.json".format(tenant))
+            continue
+
         found = False
         for i, et in enumerate(m["tenants"]):
             if et["code"] == tenant:
                 found = True
                 break
 
-        if tenant not in tenant_codes:
-            print("Cannot activate tenant. The tenant {} doesn't exists in tenants.json".format(tenant))
-            continue
 
         if found and activate:
             print("tenant already active - " + tenant + " for module = " + module)
