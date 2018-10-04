@@ -1,6 +1,17 @@
-import traceback
+from inspect import getsourcefile
+import os.path as path, sys
+current_dir = path.dirname(path.dirname(path.abspath(getsourcefile(lambda:0))))
+sys.path.insert(0, current_dir[:current_dir.rfind(path.sep)])
 
-import create_employee_script
+import traceback
+from os.path import dirname
+
+try:
+    import create_employee_script
+except ImportError as ex:
+     dirname(dirname(__file__))
+
+
 import fireCessGen
 from config import config, load_config
 
