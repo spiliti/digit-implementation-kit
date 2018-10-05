@@ -93,5 +93,5 @@ for _, row in employees.iterrows():
 
     rows.append(",".join(row_data))
 
-with open(Path("employees/" + config.CITY_NAME.lower() + ".csv"), "w") as f:
+with open(Path(config.BASE_PATH + "employees/" + config.CITY_NAME.lower() + ".csv"), "w") as f:
     f.write("\n".join(rows))

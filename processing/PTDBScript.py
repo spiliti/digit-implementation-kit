@@ -33,7 +33,7 @@ def main():
     response = os.getenv("ASSUME_YES", None) or input("Do you want to generate the SQL template (y/[n])?")
 
     if response.lower() == "y":
-        with open("../sql/templates/PTGoLive.template.sql") as f:
+        with open(config.BASE_PATH + "/sql/templates/PTGoLive.template.sql") as f:
             data = f.read()
             for key, value in template.items():
                 data = data.replace(key, value)
