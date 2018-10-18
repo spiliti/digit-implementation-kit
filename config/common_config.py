@@ -10,6 +10,9 @@ def load_config():
     config.MDMS_DEPARTMENT_JSON = config.MDMS_LOCATION / "common-masters" / "Department.json"
     config.MDMS_DESIGNATION_JSON = config.MDMS_LOCATION / "common-masters" / "Designation.json"
 
+    config.MDMS_ACTIONS_JSON = config.MDMS_LOCATION / "ACCESSCONTROL-ACTIONS-TEST" / "actions-test.json"
+    config.MDMS_ROLEACTIONS_JSON = config.MDMS_LOCATION / "ACCESSCONTROL-ROLEACTIONS" / "roleactions.json"
+
     config.CITY_MODULES_JSON = config.MDMS_LOCATION / "tenant" / "citymodule.json"
     config.TENANT_JSON = config.MDMS_LOCATION / "tenant" / "tenants.json"
 

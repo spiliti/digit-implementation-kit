@@ -7,6 +7,7 @@ tenants = ["AdampurZZ", "Alawalpur", "Bassi Pathana", "Bhogpur", "Hariana", "Sha
 
 # module = "PGR"
 module = "PT"
+tenants = ["testing"]
 
 import json
 from config import config
