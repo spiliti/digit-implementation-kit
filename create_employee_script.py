@@ -1,7 +1,7 @@
 import requests
 import csv
 
-from common import superuser_login
+from common import superuser_login, get_employee_types, get_employee_status
 from config import config
 
 
@@ -15,6 +15,27 @@ def main():
     # For UAT
     auth_token = superuser_login()["access_token"]
     start_row = 1
+
+    employee_type_list = get_employee_types(tenant_id, auth_token)
+    permanent_employee_type_code = None
+    for etype in employee_type_list:
+        if etype["name"] == "Permanent":
+            permanent_employee_type_code = etype["id"]
+            break
+
+    employee_status_list = get_employee_status(tenant_id, auth_token)
+    employed_employee_status_code = None
+    for estatus in employee_status_list:
+        if estatus["code"] == "EMPLOYED":
+            employed_employee_status_code = estatus["id"]
+            break
+
+
+    if permanent_employee_type_code is None:
+        raise Exception("There is no code for Permanent Employee Type")
+
+    if employed_employee_status_code is None:
+        raise Exception("There is no Code for Employed Employee Status")
 
     with open(sheet_name) as csvfile:
         readCSV = csv.reader(csvfile, delimiter=',')
@@ -40,9 +61,9 @@ def main():
             post_data = {
                 "RequestInfo": {"apiId": "org.egov.pgr", "ver": "1.0", "ts": "24-04-2016 12:12:12", "action": "asd",
                                 "did": "4354648646", "key": "xyz", "msgId": None, "authToken": auth_token},
-                "Employee": {"code": row[8], "dateOfAppointment": row[4], "employeeStatus": "7", "employeeType": "1",
+                "Employee": {"code": row[8], "dateOfAppointment": row[4], "employeeStatus": employed_employee_status_code, "employeeType": permanent_employee_type_code,
                              "assignments": details, "jurisdictions": ["100"], "physicallyDisabled": False,
-                             "transferredEmployee": False, "medicalReportProduced": True, "languagesKnown": [],
+                             "transferredEmployee": False, "medicalRep  ortProduced": True, "languagesKnown": [],
                              "maritalStatus": "MARRIED", "ifscCode": "ffwe", "documents": [], "serviceHistory": [],
                              "probation": [], "regularisation": [], "technical": [], "education": [], "test": [],
                              "user": {"roles": [{"code": row[10], "name": row[11], "tenantId": tenant_id}],

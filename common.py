@@ -8,6 +8,24 @@ import requests
 from config import config
 
 
+def get_employee_types(tenantid, auth_token):
+    headers = {'Content-Type': 'application/json'}
+
+    post_data ={"RequestInfo":{"authToken":auth_token}}
+    post_response = requests.post(url=config.HOST + '/hr-masters-v2/employeetypes/_search?tenantId='+tenantid, headers= headers,
+                                  json=post_data)
+    return post_response.json()['EmployeeType']
+
+
+def get_employee_status(tenantid, auth_token):
+    headers = {'Content-Type': 'application/json'}
+    post_data = {"RequestInfo": {"authToken": auth_token}}
+    post_response = requests.post(url=config.HOST + '/hr-masters-v2/hrstatuses/_search?tenantId=' + tenantid,
+                                  headers=headers,
+                                  json=post_data)
+    return post_response.json()['HRStatus']
+
+
 def open_excel_file(path):
     xl_file = pd.ExcelFile(path)
 
