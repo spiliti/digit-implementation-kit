@@ -14,10 +14,7 @@ except ImportError as ex:
 
 from config import config, load_config
 
-import boundaryGen
-import departmentGen
-import designationGen
-import tenantGen
+import AdminBoundaryGen
 import employeeGen
 
 cities = ["Alawalpur"]
@@ -38,21 +35,10 @@ for city in cities[2:]:
 
         # step = "Creating employees"
         # create_employee_script.main()
-        step = "Generating tenant data"
-        print(step)
-        tenantGen.main()
-
-        step = "Generating department data"
-        print(step)
-        departmentGen.main()
-
-        step = "Generating designation data"
-        print(step)
-        designationGen.main()
 
         step = "Generating Boundary data"
         print(step)
-        boundaryGen.main()
+        AdminBoundaryGen.main()
 
         step = "Generating Employee data"
         print(step)

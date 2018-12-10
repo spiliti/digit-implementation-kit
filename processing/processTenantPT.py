@@ -15,10 +15,7 @@ except ImportError as ex:
 import fireCessGen
 from config import config, load_config
 
-import PTBoundaryGen
-import departmentGen
-import designationGen
-import tenantGen
+import RevenueBoundaryGen
 import employeeGen
 from processing import PTDBScript
 
@@ -38,35 +35,23 @@ for city in cities[2:]:
         config.CITY_NAME = city.replace(" ", "")
         load_config()
 
-        step = "Creating employees"
-        create_employee_script.main()
-        # step = "Generating tenant data"
-        # print(step)
-        # tenantGen.main()
-        #
-        # step = "Generating firecess config"
-        # print(step)
-        # fireCessGen.main()
-        #
-        # step = "Generating department data"
-        # print(step)
-        # departmentGen.main()
-        #
-        # step = "Generating designation data"
-        # print(step)
-        # designationGen.main()
-        #
-        # step = "Generating Boundary data"
-        # print(step)
-        # PTBoundaryGen.main()
-        #
-        # step = "Generating SQL data"
-        # print(step)
-        # PTDBScript.main()
-        #
-        # step = "Generating Employee data"
-        # print(step)
-        # employeeGen.main()
+        # step = "Creating employees"
+        # create_employee_script.main()
+        step = "Generating firecess config"
+        print(step)
+        fireCessGen.main()
+
+        step = "Generating Boundary data"
+        print(step)
+        RevenueBoundaryGen.main()
+
+        step = "Generating SQL data"
+        print(step)
+        PTDBScript.main()
+
+        step = "Generating Employee data"
+        print(step)
+        employeeGen.main()
 
     except Exception as ex:
         print("City", city, "failed", step, str(ex))
