@@ -146,16 +146,27 @@ def main():
                            , existing_employees)
                 print("{} Employee(s) with mobile number {} already exists".format(len(existing_employees),
                                                                                    mobile_number), list(info))
-                username_update = input("Which user would you like to update with " + role_codes + " [Use n for skip]? ")
+                if len(existing_employees) > 1:
+                    username_update = input("Which user would you like to update with " + role_codes + " [Use n for skip]? ")
+                else:
+                    username_update = input(
+                        "Will you like to add the " + role_codes + " to user {} [Yn]? ".format(existing_employees[0]["userName"]))
+                    if username_update.strip().lower() == "n":
+                        print("Skipping the user creation for {}".format(username))
+                        continue
+                    else:
+                        username_update = existing_employees[0]["userName"]
+
                 if username_update.strip().lower() == "n":
                     print("Skipping the user creation for {}".format(username))
+                    continue
                 else:
-                    employee_found = list(filter(lambda emp: emp["username"] == username_update, existing_employees))
+                    employee_found = list(filter(lambda emp: emp["userName"] == username_update, existing_employees))
                     if not employee_found:
                         print ("Cannot find employee with username - " + username_update)
                     else:
                         roles_currently = set(map(lambda role: role['code'], employee_found[0]['roles']))
-                        add_role_to_user(auth_token, username, tenant_id, roles_needed - roles_currently)
+                        add_role_to_user(auth_token, username_update, tenant_id, roles_needed - roles_currently)
                 continue
 
             for department in departments.split("|"):
