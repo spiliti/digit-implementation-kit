@@ -11,8 +11,9 @@ from config import config
 def get_employee_types(tenantid, auth_token):
     headers = {'Content-Type': 'application/json'}
 
-    post_data ={"RequestInfo":{"authToken":auth_token}}
-    post_response = requests.post(url=config.HOST + '/hr-masters-v2/employeetypes/_search?tenantId='+tenantid, headers= headers,
+    post_data = {"RequestInfo": {"authToken": auth_token}}
+    post_response = requests.post(url=config.HOST + '/hr-masters-v2/employeetypes/_search?tenantId=' + tenantid,
+                                  headers=headers,
                                   json=post_data)
     return post_response.json()['EmployeeType']
 
@@ -336,3 +337,79 @@ def fix_value(val, default_str="", default_nan=None):
         return default_nan
     else:
         return str(val)
+
+
+def get_employees(auth_token, **kwargs):
+    data = requests.post(url=config.HOST + '/user/_search',
+                         json={
+                             **{
+                                 "RequestInfo": {
+                                     "authToken": auth_token
+                                 }
+                             }, **kwargs,
+                         })
+    # print(data.json())
+    return data.json()["user"]
+
+
+def get_employees_by_id(auth_token, username, tenantid):
+    # data = requests.post(url=config.HOST + '/user/_search',
+    #                      json={
+    #                          "RequestInfo": {
+    #                              "authToken": auth_token
+    #                          },
+    #                          "userName": username,
+    #                          "tenantId": tenantid
+    #                      })
+    #
+    # return data.json()["user"]
+    return get_employees(auth_token, userName=username, tenantId=tenantid)
+
+
+def get_employees_by_phone(auth_token, phone, tenantid):
+    # data = requests.post(url=config.HOST + '/user/_search',
+    #                      json={
+    #                          "RequestInfo": {
+    #                              "authToken": auth_token
+    #                          },
+    #                          "mobileNumber": phone,
+    #                          "tenantId": tenantid
+    #                      })
+    #
+    # return data.json()["user"]
+    return get_employees(auth_token, mobileNumber=phone, tenantId=tenantid)
+
+
+def add_role_to_user(auth_token, username, tenant_id, add_roles, change_roles = {}, remove_previous_roles=False):
+    user = get_employees_by_id(auth_token, username, tenant_id)
+
+    if remove_previous_roles:
+        user[0]["roles"] = []
+
+    if change_roles:
+        changed = False
+        for role in user[0]["roles"]:
+            if role["code"] in change_roles:
+                role["code"] = change_roles[role["code"]]
+                changed = True
+
+        if not changed:
+            return
+
+    for role in add_roles:
+        user[0]["roles"].append({
+            "code": role,
+            "name": config.ROLE_CODE_MAP[role]
+        })
+
+    user[0]['dob'] = None
+
+    data = requests.post(url=config.HOST + '/user/users/_updatenovalidate',
+                         json={
+                             "RequestInfo": {
+                                 "authToken": auth_token
+                             },
+                             "user": user[0],
+                         })
+
+    return data.json()["user"]

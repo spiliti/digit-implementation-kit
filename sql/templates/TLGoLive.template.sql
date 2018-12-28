@@ -1,3 +1,4 @@
+BEGIN;
 
 --> user module (roles for new TL employee roles)
 insert into eg_role (id,name,code,description,createddate,createdby,lastmodifiedby,lastmodifieddate,version,tenantid)values
@@ -13,7 +14,7 @@ ON CONFLICT (code, tenantid) DO NOTHING;
 
 INSERT INTO egbs_business_service_details (id, businessservice, collectionmodesnotallowed, callbackforapportioning, partpaymentallowed, callbackapportionurl, createddate, lastmodifieddate, createdby, lastmodifiedby, tenantid) VALUES (uuid_in(md5(random()::text || now()::text)::cstring), 'TL', '', false, false, NULL, (select extract ('epoch' from (select * from now()))*1000)
 , (select extract ('epoch' from (select * from now()))*1000)
-, '94', '94', 'pb.__city__');
+, '94', '94', 'pb.__city__') ON CONFLICT DO NOTHING;
 
 
 INSERT INTO egbs_taxperiod (id, service, code, fromdate, todate, financialyear, createddate, lastmodifieddate, createdby, lastmodifiedby, tenantid, periodcycle) VALUES (nextval('seq_egbs_taxperiod'), 'TL', 'TLAN2014-15', 1396310400000, 1427846399000, '2014-15', (select extract ('epoch' from (select * from now()))*1000)
@@ -69,7 +70,7 @@ INSERT INTO egf_chartofaccount (id, glcode, name, accountcodepurposeid, descript
 insert into eg_businesscategory(id,name,code,active,tenantid,version,createdby,lastmodifiedby,createddate,lastmodifieddate) values(
 nextval('seq_eg_businesscategory'),'Trade License','TL',true,'pb.__city__',0,1,1,(select extract ('epoch' from (select * from now()))*1000)
 ,(select extract ('epoch' from (select * from now()))*1000)
-);
+) ON CONFLICT DO NOTHING;
 
 insert into eg_businessdetails(id,name,businessurl,isenabled,code,businesstype,fund,function,department,vouchercreation,
 businesscategory,isvoucherapproved,createdby,
@@ -77,5 +78,6 @@ lastmodifiedby,ordernumber,version,tenantid,callbackforapportioning,createddate,
 values(nextval('seq_eg_businessdetails'),'Trade License','/receipts/receipt-create.action',true,'TL','ADHOC','01','909100','DEPT_1',false,
 (select id from eg_businesscategory where code='TL' and tenantid='pb.__city__'),false,1,1,1,0,'pb.__city__',false,(select extract ('epoch' from (select * from now()))*1000)
 ,(select extract ('epoch' from (select * from now()))*1000)
-);
+) ON CONFLICT DO NOTHING;
 
+COMMIT;

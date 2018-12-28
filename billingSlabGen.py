@@ -7,7 +7,7 @@ dfs, wks = open_google_spreadsheet(
     "https://docs.google.com/spreadsheets/d/1h2VMSvwoP28nTp_d0kDameundtRIi-MkQM9w4EHcv1k/edit#gid=0",
     "Billing slab_test")
 
-tenant_id = 'pb.kurali'
+tenant_id = 'pb.mohali'
 sheet = get_sheet(dfs, "Billing slab_test")
 wk = wks.worksheet("Billing slab_test")
 

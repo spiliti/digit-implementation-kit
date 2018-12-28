@@ -6,9 +6,43 @@ tenants = ["testing"]
 tenants = ["AdampurZZ", "Alawalpur", "Bassi Pathana", "Bhogpur", "Hariana", "Sham Churasi", "Sunam", "Urmar Tanda"]
 
 # module = "PGR"
-module = "PT"
-tenants = ["testing"]
-
+module = "TL"
+# tenants = ["testing"]
+tenants = [
+"pb.lalru",
+"pb.lohiankhas",
+"pb.ludhiana",
+"pb.machhiwara",
+"pb.mahilpur",
+"pb.mandigobindgarh",
+"pb.mansa",
+"pb.moga",
+"pb.morinda",
+"pb.mukerian",
+"pb.muktsar",
+"pb.mullanpur",
+"pb.nabha",
+"pb.nangal",
+"pb.nawanshahr",
+"pb.nihalsinghwala",
+"pb.patran",
+"pb.patti",
+"pb.payal",
+"pb.phagwara",
+"pb.quadian",
+"pb.raikot",
+"pb.raman",
+"pb.ropar",
+"pb.samrala",
+"pb.shahkot",
+"pb.sirhind",
+"pb.srihargobindpur",
+"pb.sultanpurlodhi",
+"pb.sunam",
+"pb.tapa",
+"pb.urmartanda",
+"pb.zira",
+]
 import json
 from config import config
 
@@ -30,7 +64,8 @@ for m in data["citymodule"]:
 
 if found:
     for tenant in tenants:
-        tenant = "pb." + tenant.lower().replace(" ", "")
+        if "pb." not in tenant:
+            tenant = "pb." + tenant.lower().replace(" ", "")
 
         if tenant not in tenant_codes:
             print("Cannot activate tenant. The tenant {} doesn't exists in tenants.json".format(tenant))

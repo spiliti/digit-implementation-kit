@@ -19,7 +19,7 @@ review_headers = ["PropertyType", "UsageCategoryMajor", "UsageCategoryMinor", "U
 
 from common import *
 
-TAB_NAME = 'Category B'
+TAB_NAME = 'Category A'
 
 dfs, wks = open_google_spreadsheet(
     "https://docs.google.com/spreadsheets/d/1Grd20oHLoC4B5DfuMY8Yud31w7uKY09gM22E2LbH3cs/edit?ts=5b8e2d98#gid=771025646",

@@ -1,58 +1,9 @@
 import requests
 import csv
 
-from common import superuser_login, get_employee_types, get_employee_status
+from common import superuser_login, get_employee_types, get_employee_status, add_role_to_user, get_employees_by_phone, \
+    get_employees_by_id
 from config import config
-
-
-
-def get_employees_by_id(auth_token, username, tenantid):
-    data = requests.post(url=config.HOST + '/user/_search',
-                         json={
-                             "RequestInfo": {
-                                 "authToken": auth_token
-                             },
-                             "userName": username,
-                             "tenantId": tenantid
-                         })
-
-    return data.json()["user"]
-
-
-def get_employees_by_phone(auth_token, phone, tenantid):
-    data = requests.post(url=config.HOST + '/user/_search',
-                         json={
-                             "RequestInfo": {
-                                 "authToken": auth_token
-                             },
-                             "mobileNumber": phone,
-                             "tenantId": tenantid
-                         })
-
-    return data.json()["user"]
-
-
-def add_role_to_user(auth_token, username, tenant_id, add_roles):
-    user = get_employees_by_id(auth_token, username, tenant_id)
-
-    for role in add_roles:
-        user[0]["roles"].append ({
-            "code": role,
-            "name": config.ROLE_CODE_MAP[role]
-        })
-
-    user[0]['dob'] = None
-
-    data = requests.post(url=config.HOST + '/user/users/_updatenovalidate',
-                         json={
-                             "RequestInfo": {
-                                 "authToken": auth_token
-                             },
-                             "user": user[0],
-                         })
-
-    return data.json()["user"]
-
 
 def main():
     city = config.CITY_NAME
