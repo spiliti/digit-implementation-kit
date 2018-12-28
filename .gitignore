@@ -1,6 +1,8 @@
+
 *.csv
 *.xls
 *.xlsx
+!source/template.xlsx
 .idea
 __pycache__
 *.pyc
