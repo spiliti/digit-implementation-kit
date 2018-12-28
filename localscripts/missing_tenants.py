@@ -1,7 +1,7 @@
 import json
 from config import config
 
-module = "TL"
+module = "PT"
 
 with open(config.TENANT_JSON, mode="r") as f:
     tenants_data = json.load(f)

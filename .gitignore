@@ -10,3 +10,5 @@ boundary-data.json
 sql/tenants
 work.py
 logos
+localscripts/*
+deprecated/*
