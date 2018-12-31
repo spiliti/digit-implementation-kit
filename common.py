@@ -5,6 +5,8 @@ import numpy
 import pandas as pd
 import re
 import requests
+from selenium.common.exceptions import InvalidArgumentException
+
 from config import config
 
 
@@ -207,18 +209,27 @@ def create_boundary(config_function, boundary_type):
     if current_boundary_type == "REVENUE":
         index_area = get_column_index(locality, config.COLUMN_LOCALITY_AREA)
 
+    area = "" if current_boundary_type == "ADMIN" else row[index_area].strip().upper().replace(" ", "").replace(
+            "-", "")
+    area_code = area.replace("AREA", "A")
+
+    if area not in ("AREA1", "AREA2", "AREA3"):
+        raise InvalidArgumentException("Area type is not valid - " + area)
+
+    if area_code:
+        area_code = " - " + area_code
+
     locality_data = locality.apply(lambda row: {
         "id": str(uuid.uuid4()),
         "boundaryNum": 1,
-        "name": row[index_name].strip() + " - " + ward_to_code_map[row[index_admin_block].strip()],
-        "localname": row[index_name].strip() + " - " + ward_to_code_map[row[index_admin_block].strip()],
+        "name": row[index_name].strip() + " - " + ward_to_code_map[row[index_admin_block].strip()] + area_code,
+        "localname": row[index_name].strip() + " - " + ward_to_code_map[row[index_admin_block].strip()] + area_code,
         "longitude": None,
         "latitude": None,
         "label": "Locality",
         "code": row[index_code].strip(),
         "ward": row[index_admin_block].strip(),
-        "area": "" if current_boundary_type == "ADMIN" else row[index_area].strip().upper().replace(" ", "").replace(
-            "-", ""),
+        "area": area,
         "children": []
     }, axis=1)
 
