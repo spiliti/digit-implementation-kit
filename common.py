@@ -209,29 +209,31 @@ def create_boundary(config_function, boundary_type):
     if current_boundary_type == "REVENUE":
         index_area = get_column_index(locality, config.COLUMN_LOCALITY_AREA)
 
-    area = "" if current_boundary_type == "ADMIN" else row[index_area].strip().upper().replace(" ", "").replace(
+    def process_locality(row):
+        area = "" if current_boundary_type == "ADMIN" else row[index_area].strip().upper().replace(" ", "").replace(
             "-", "")
-    area_code = area.replace("AREA", "A")
+        area_code = area.replace("AREA", "A")
 
-    if area not in ("AREA1", "AREA2", "AREA3"):
-        raise InvalidArgumentException("Area type is not valid - " + area)
+        if area not in ("AREA1", "AREA2", "AREA3"):
+            raise InvalidArgumentException("Area type is not valid - " + area)
 
-    if area_code:
-        area_code = " - " + area_code
+        if area_code:
+            area_code = " - " + area_code
+        return {
+            "id": str(uuid.uuid4()),
+            "boundaryNum": 1,
+            "name": row[index_name].strip() + " - " + ward_to_code_map[row[index_admin_block].strip()] + area_code,
+            "localname": row[index_name].strip() + " - " + ward_to_code_map[row[index_admin_block].strip()] + area_code,
+            "longitude": None,
+            "latitude": None,
+            "label": "Locality",
+            "code": row[index_code].strip(),
+            "ward": row[index_admin_block].strip(),
+            "area": area,
+            "children": []
+        }
 
-    locality_data = locality.apply(lambda row: {
-        "id": str(uuid.uuid4()),
-        "boundaryNum": 1,
-        "name": row[index_name].strip() + " - " + ward_to_code_map[row[index_admin_block].strip()] + area_code,
-        "localname": row[index_name].strip() + " - " + ward_to_code_map[row[index_admin_block].strip()] + area_code,
-        "longitude": None,
-        "latitude": None,
-        "label": "Locality",
-        "code": row[index_code].strip(),
-        "ward": row[index_admin_block].strip(),
-        "area": area,
-        "children": []
-    }, axis=1)
+    locality_data = locality.apply(process_locality, axis=1)
 
     wards_list = wards_data.tolist()
     locality_list = locality_data.tolist()
@@ -391,7 +393,7 @@ def get_employees_by_phone(auth_token, phone, tenantid):
     return get_employees(auth_token, mobileNumber=phone, tenantId=tenantid)
 
 
-def add_role_to_user(auth_token, username, tenant_id, add_roles, change_roles = {}, remove_previous_roles=False):
+def add_role_to_user(auth_token, username, tenant_id, add_roles, change_roles={}, remove_previous_roles=False):
     user = get_employees_by_id(auth_token, username, tenant_id)
 
     if remove_previous_roles:
