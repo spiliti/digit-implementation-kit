@@ -5,6 +5,7 @@ from common import superuser_login, get_employee_types, get_employee_status, add
     get_employees_by_id
 from config import config
 
+
 def main():
     city = config.CITY_NAME
 
@@ -70,19 +71,28 @@ def main():
                 # This employee already exists
                 existing_mobilenumber = existing_employees[0]['mobileNumber']
                 roles_currently = set(map(lambda role: role['code'], existing_employees[0]['roles']))
+                ask_for_role_update = False
 
                 if existing_employees != mobile_number:
                     print(
                         "The employee {} already exist with mobile number {}. You have specified a different mobile number {}".format(
                             username, existing_mobilenumber, mobile_number))
-
-                print("Employee", username, tenant_id, name, mobile_number, "already exists - ",
-                      len(existing_employees))
+                    ask_for_role_update = True
+                else:
+                    print("Employee", username, tenant_id, name, mobile_number, "already exists - ",
+                          len(existing_employees))
 
                 if roles_needed.issubset(roles_currently):
-                    print ("The employee already has all required roles. Nothing needed")
+                    print("The employee already has all required roles. Nothing needed")
                 else:
-                    print ("Adding required roles to user - {}".format(username))
+                    if ask_for_role_update:
+                        username_update = input(
+                            "Would you like to add " + role_codes + " to " + username + "[Use n for skip]? ")
+                        if username_update.lower() == "n":
+                            print("Skipping adding required roles to user - {}".format(username))
+                            continue
+                    else:
+                        print("Adding required roles to user - {}".format(username))
                     add_role_to_user(auth_token, username, tenant_id, roles_needed - roles_currently)
                 continue
 
@@ -98,10 +108,12 @@ def main():
                 print("{} Employee(s) with mobile number {} already exists".format(len(existing_employees),
                                                                                    mobile_number), list(info))
                 if len(existing_employees) > 1:
-                    username_update = input("Which user would you like to update with " + role_codes + " [Use n for skip]? ")
+                    username_update = input(
+                        "Which user would you like to update with " + role_codes + " [Use n for skip]? ")
                 else:
                     username_update = input(
-                        "Will you like to add the " + role_codes + " to user {} [Yn]? ".format(existing_employees[0]["userName"]))
+                        "Will you like to add the " + role_codes + " to user {} [Yn]? ".format(
+                            existing_employees[0]["userName"]))
                     if username_update.strip().lower() == "n":
                         print("Skipping the user creation for {}".format(username))
                         continue
@@ -114,7 +126,7 @@ def main():
                 else:
                     employee_found = list(filter(lambda emp: emp["userName"] == username_update, existing_employees))
                     if not employee_found:
-                        print ("Cannot find employee with username - " + username_update)
+                        print("Cannot find employee with username - " + username_update)
                     else:
                         roles_currently = set(map(lambda role: role['code'], employee_found[0]['roles']))
                         add_role_to_user(auth_token, username_update, tenant_id, roles_needed - roles_currently)
