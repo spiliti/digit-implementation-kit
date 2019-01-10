@@ -214,11 +214,12 @@ def create_boundary(config_function, boundary_type):
             "-", "")
         area_code = area.replace("AREA", "A")
 
-        if area not in ("AREA1", "AREA2", "AREA3"):
+        if current_boundary_type == "REVENUE" and area not in ("AREA1", "AREA2", "AREA3"):
             raise InvalidArgumentException("Area type is not valid - " + area)
 
         if area_code:
             area_code = " - " + area_code
+
         return {
             "id": str(uuid.uuid4()),
             "boundaryNum": 1,
