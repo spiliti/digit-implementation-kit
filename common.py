@@ -427,3 +427,20 @@ def add_role_to_user(auth_token, username, tenant_id, add_roles, change_roles={}
                          })
 
     return data.json()["user"]
+
+
+def update_user_password(auth_token, tenant_id, username, password):
+    user = get_employees_by_id(auth_token, username, tenant_id)
+
+    user[0]['dob'] = None
+    user[0]['password'] = password
+
+    data = requests.post(url=config.HOST + '/user/users/_updatenovalidate',
+                         json={
+                             "RequestInfo": {
+                                 "authToken": auth_token
+                             },
+                             "user": user[0],
+                         })
+
+    return data.json()["user"]
