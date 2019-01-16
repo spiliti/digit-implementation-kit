@@ -444,3 +444,20 @@ def update_user_password(auth_token, tenant_id, username, password):
                          })
 
     return data.json()["user"]
+
+
+def update_user_activation(auth_token, tenant_id, username, activate=False):
+    user = get_employees_by_id(auth_token, username, tenant_id)
+
+    user[0]['dob'] = None
+    user[0]['active'] = activate
+
+    data = requests.post(url=config.HOST + '/user/users/_updatenovalidate',
+                         json={
+                             "RequestInfo": {
+                                 "authToken": auth_token
+                             },
+                             "user": user[0],
+                         })
+
+    return data.json()["user"]
