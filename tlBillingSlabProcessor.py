@@ -65,7 +65,7 @@ def get_slab_id(slab):
 
 
 tenants = [
-    "pb.kotshamir"
+    "pb.nabha"
 ]
 
 for tenant in tenants:
