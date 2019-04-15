@@ -62,7 +62,7 @@ def create_trade_n_accessory_data(tenant_id, trade_n_accessory_file_path,
         write_sheet.write(179 + accessory_row_no, 10, charge)
 
     file_name = tenant_id + '.processed.xls'
-    destination_file_path = destination_path + '/' + file_name
+    destination_file_path = destination_path / file_name
 
     wb_write_tenant_data.save(destination_file_path)
 
