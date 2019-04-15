@@ -5,7 +5,6 @@ import numpy
 import pandas as pd
 import re
 import requests
-from selenium.common.exceptions import InvalidArgumentException
 
 from config import config
 
@@ -461,3 +460,68 @@ def update_user_activation(auth_token, tenant_id, username, activate=False):
                          })
 
     return data.json()["user"]
+
+
+def search_property(auth_token, tenant_id, property_id):
+    data = requests.post(url=config.HOST + '/pt-services-v2/property/_search',
+                         json={
+                             "RequestInfo": {
+                                 "authToken": auth_token
+                             }
+                         }, params={"ids": property_id, "tenantId": tenant_id})
+
+    return data.json()
+
+
+def search_receipt(auth_token, receiptNumbers=None, tenantId=None, consumerCode=None, businessCode=None, status=None):
+    args = {}
+
+    if status:
+        args["status"] = status
+
+    if receiptNumbers:
+        args["receiptNumbers"] = receiptNumbers
+
+    if tenantId:
+        args["tenantId"] = tenantId
+
+    if consumerCode:
+        args["consumerCode"] = consumerCode
+
+    if businessCode:
+        args["businessCode"] = businessCode
+
+    data = requests.post(url=config.HOST + '/collection-services/receipts/_search',
+                         json={
+                             "RequestInfo": {
+                                 "authToken": auth_token
+                             }
+                         }, params=args)
+
+    return data.json()
+
+
+def cancel_receipt(auth_token, receipt_number, consumer_code, message):
+    data = requests.post(url=config.HOST + '/collection-services/receipts/_workflow',
+                         json={
+                             "RequestInfo": {
+                                 "authToken": auth_token
+                             },
+                             "ReceiptWorkflow": [
+                                 {
+                                     "consumerCode": consumer_code,
+                                     "receiptNumber": receipt_number,
+                                     "action": "CANCEL",
+                                     "reason": message
+                                 }
+                             ]
+                         })
+
+    return data.json()
+
+
+def upsert_localization(auth_token, body):
+    body["RequestInfo"]["authToken"] = auth_token
+    data = requests.post(url=config.HOST + '/localization/messages/v1/_upsert', json=body)
+    return data.json()
+
