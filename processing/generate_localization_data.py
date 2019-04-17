@@ -95,76 +95,81 @@ def process_master(module, master, path, outputpath, locale_module, code="code",
         print(upsert_localization(auth_token, data))
 
 
-def process_boundary():
-    for folder in os.scandir(config.MDMS_LOCATION):
-        boundary_path = Path(folder.path) / "egov-location" / "boundary-data.json"
-        print(boundary_path)
-        locale_data = []
+def process_boundary_file(auth_token, boundary_path, generate_file=True, write_localization=True):
+    locale_data = []
 
-        # if "pb/kiratpur" not in str(boundary_path):
-        #     continue
+    with open(boundary_path, mode="r") as f:
+        data = json.load(f)
+        used_codes = set()
+        for b in data["TenantBoundary"]:
+            boundary_type = b["hierarchyType"]["code"]
+            tenant_id = b["boundary"]["code"]
 
-        if os.path.isfile(boundary_path):
-            with open(boundary_path, mode="r") as f:
-                data = json.load(f)
-                used_codes = set()
-                for b in data["TenantBoundary"]:
-                    boundary_type = b["hierarchyType"]["code"]
-                    tenant_id = b["boundary"]["code"]
+            locale_module = "rainmaker-" + tenant_id
 
-                    locale_module = "rainmaker-" + tenant_id
+            for l1 in b["boundary"]["children"]:
+                code = get_code(tenant_id + "_" + boundary_type, l1["code"])
+                if code not in used_codes:
+                    used_codes.add(code)
+                    locale_data.append({
+                        "code": code,
+                        "message": l1["name"],
+                        "module": locale_module,
+                        "locale": "en_IN"
+                    })
 
-                    for l1 in b["boundary"]["children"]:
-                        code = get_code(tenant_id + "_" + boundary_type, l1["code"])
+                for l2 in l1["children"]:
+                    code = get_code(tenant_id + "_" + boundary_type, l2["code"])
+                    if code not in used_codes:
+                        used_codes.add(code)
+                        locale_data.append({
+                            "code": get_code(tenant_id + "_" + boundary_type, l2["code"]),
+                            "message": l2["name"],
+                            "module": locale_module,
+                            "locale": "en_IN"
+                        })
+
+                    for l3 in l2.get("children", []):
+                        code = get_code(tenant_id + "_" + boundary_type, l3["code"])
                         if code not in used_codes:
                             used_codes.add(code)
                             locale_data.append({
-                                "code": code,
-                                "message": l1["name"],
+                                "code": get_code(tenant_id + "_" + boundary_type, l3["code"]),
+                                "message": l3["name"],
                                 "module": locale_module,
                                 "locale": "en_IN"
                             })
 
-                        for l2 in l1["children"]:
-                            code = get_code(tenant_id + "_" + boundary_type, l2["code"])
-                            if code not in used_codes:
-                                used_codes.add(code)
-                                locale_data.append({
-                                    "code": get_code(tenant_id + "_" + boundary_type, l2["code"]),
-                                    "message": l2["name"],
-                                    "module": locale_module,
-                                    "locale": "en_IN"
-                                })
+            outputpath = Path(".") / "localization" / config.CONFIG_ENV / (
+                    "boundary_" + boundary_type + "_" + tenant_id + ".json")
 
-                            for l3 in l2.get("children", []):
-                                code = get_code(tenant_id + "_" + boundary_type, l3["code"])
-                                if code not in used_codes:
-                                    used_codes.add(code)
-                                    locale_data.append({
-                                        "code": get_code(tenant_id + "_" + boundary_type, l3["code"]),
-                                        "message": l3["name"],
-                                        "module": locale_module,
-                                        "locale": "en_IN"
-                                    })
+            data = {
+                "RequestInfo": {
+                    "authToken": "{{access_token}}"
+                },
+                "tenantId": tenant_id,
+                "messages": locale_data
+            }
 
-                    outputpath = Path(".") / "localization" / config.CONFIG_ENV / (
-                                "boundary_" + boundary_type + "_" + tenant_id + ".json")
+            if generate_file:
+                with io.open(outputpath, mode="w") as f:
+                    # print(json.dumps(locale_data, indent=2))
+                    json.dump(data
+                              , indent=2, fp=f)
 
-                    with io.open(outputpath, mode="w") as f:
-                        # print(json.dumps(locale_data, indent=2))
-                        data = {
-                            "RequestInfo": {
-                                "authToken": "{{access_token}}"
-                            },
-                            "tenantId": tenant_id,
-                            "messages": locale_data
-                        }
-                        json.dump(data
-                                  , indent=2, fp=f)
+            if write_localization:
+                localize_response = upsert_localization(auth_token, data)
 
-                        localize_response = upsert_localization(auth_token, data)
-                        print(localize_response)
+            print(localize_response)
 
+
+def process_boundary(auth_token):
+    for folder in os.scandir(config.MDMS_LOCATION):
+        boundary_path = Path(folder.path) / "egov-location" / "boundary-data.json"
+        print(boundary_path)
+
+        if os.path.isfile(boundary_path):
+            process_boundary_file(auth_token, boundary_path)
 
 # process_master("common-masters", "Department", None, None, "rainmaker-common")
 # process_master("common-masters", "Designation", None, None, "rainmaker-common")
