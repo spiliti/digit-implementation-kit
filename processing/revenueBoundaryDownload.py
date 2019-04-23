@@ -1,3 +1,5 @@
+import json
+
 import requests
 import xlwt
 from xlwt import Worksheet
@@ -5,8 +7,11 @@ from config import config
 
 
 def download_boundary(tenant, boundary_type):
-    url = "https://raw.githubusercontent.com/egovernments/punjab-mdms-data/master/data/{}/egov-location/boundary-data.json".replace(
-        "{}", tenant.replace(".", "/"))
+    # url = "https://raw.githubusercontent.com/egovernments/punjab-mdms-data/master/data/{}/egov-location/boundary-data.json".replace(
+    #     "{}", tenant.replace(".", "/"))
+
+    boundary_path = config.MDMS_LOCATION / config.CITY_NAME.lower() / "egov-location" / "boundary-data.json"
+
     wk = xlwt.Workbook()
     zone: Worksheet = wk.add_sheet("Revenue Zone")
     ward: Worksheet = wk.add_sheet("Revenue Block or Ward")
@@ -19,12 +24,15 @@ def download_boundary(tenant, boundary_type):
         ward.write(0, i, col)
 
     for i, col in enumerate(
-            ["S.No", "Locality Code*", "Locality Name*", "Rev Block/Ward", "Area Name (Area 1, 2 or 3)"]):
+            ["S.No", "Locality Code*", "Locality Name*", "Rev Block/Ward Name", "Area Name (Area 1, 2 or 3)"]):
         locality.write(0, i, col)
 
-    response = requests.get(url)
+    # response = requests.get(url)
+    #
+    # boundary = response.json()['TenantBoundary']
 
-    boundary = response.json()['TenantBoundary']
+    with open(boundary_path) as f:
+        boundary = json.load(f)['TenantBoundary']
 
     if boundary[0]["hierarchyType"]["code"] == boundary_type:
         boundary_data = boundary[0]["boundary"]

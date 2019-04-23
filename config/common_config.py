@@ -89,6 +89,9 @@ def load_config():
 
     config.SHEET_NAME = config.CITY_NAME.lower() + ".xlsx"
     config.SHEET = config.BOUNDARIES_FOLDER / config.SHEET_NAME
+    if not os.path.isfile(config.SHEET):
+        config.SHEET_NAME = config.CITY_NAME.lower() + ".xls"
+        config.SHEET = config.BOUNDARIES_FOLDER / config.SHEET_NAME
 
     config.SHEET_DEPARTMENTS = "Employee-Position"
 

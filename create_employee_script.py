@@ -73,7 +73,7 @@ def main():
                 roles_currently = set(map(lambda role: role['code'], existing_employees[0]['roles']))
                 ask_for_role_update = False
 
-                if existing_employees != mobile_number:
+                if existing_mobilenumber != mobile_number:
                     print(
                         "The employee {} already exist with mobile number {}. You have specified a different mobile number {}".format(
                             username, existing_mobilenumber, mobile_number))

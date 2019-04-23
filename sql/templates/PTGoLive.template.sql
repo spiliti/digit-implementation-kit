@@ -124,6 +124,10 @@ INSERT INTO egbs_taxperiod (id, service, code, fromdate, todate, financialyear, 
 INSERT INTO egbs_taxperiod (id, service, code, fromdate, todate, financialyear, createddate, lastmodifieddate, createdby, lastmodifiedby, tenantid, periodcycle) VALUES (nextval('seq_egbs_taxperiod'), 'PT', 'PTAN2018-19', 1522540800000, 1554076799000, '2018-19', 1535112115833, 1535112115833, '94', '94', 'pb.__city__', 'ANNUAL');
 
 
+INSERT INTO egbs_taxperiod (id, service, code, fromdate, todate, financialyear, createddate, lastmodifieddate, createdby, lastmodifiedby, tenantid, periodcycle) VALUES (nextval('seq_egbs_taxperiod'), 'PT', 'PTAN2019-20', 1554076800000, 1585699199000, '2019-20', 1535112115833, 1535112115833, '94', '94', 'pb.__city__', 'ANNUAL');
+INSERT INTO egbs_taxperiod (id, service, code, fromdate, todate, financialyear, createddate, lastmodifieddate, createdby, lastmodifiedby, tenantid, periodcycle) VALUES (nextval('seq_egbs_taxperiod'), 'PT', 'PTAN2020-21', 1585699200000, 1617235199000, '2020-21', 1535112115833, 1535112115833, '94', '94', 'pb.__city__', 'ANNUAL');
+
+
 delete from eg_business_accountdetails where businessdetails in (select id from eg_businessdetails where code in ('CS','PT','WT','WC') and tenantid='pb.__city__');
 delete from eg_businessdetails where code in ('CS','PT','WT','WC') and tenantid='pb.__city__';
 delete from eg_businesscategory where code in ('CS','PT','WT','WC') and tenantid='pb.__city__';
