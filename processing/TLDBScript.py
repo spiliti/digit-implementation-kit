@@ -2,8 +2,7 @@ import io
 from config import config
 
 tenants = [
-    "pb.abohar",
-    "pb.zira"
+    "pb.nawanshahr",
 ]
 
 

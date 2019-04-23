@@ -171,62 +171,64 @@ def process_boundary(auth_token):
         if os.path.isfile(boundary_path):
             process_boundary_file(auth_token, boundary_path)
 
-# process_master("common-masters", "Department", None, None, "rainmaker-common")
-# process_master("common-masters", "Designation", None, None, "rainmaker-common")
-# process_master("common-masters", "DocumentType", None, None, "rainmaker-common")
-# process_master("common-masters", "OwnerShipCategory", None, None, "rainmaker-common")
-# process_master("common-masters", "OwnerType", None, None, "rainmaker-common")
-# process_master("common-masters", "OwnerShipCategory", None, None, "rainmaker-common", process_dot=True)
-# process_master("common-masters", "StructureType", None, None, "rainmaker-common", process_dot=True)
-# process_master("common-masters", "UOM", None, None, "rainmaker-common")
-#
-# process_master("TradeLicense", "TradeType", None, None, "rainmaker-tl", process_dot=True)
-# process_master("TradeLicense", "AccessoriesCategory", None, None, "rainmaker-tl")
-# process_master("TradeLicense", "ApplicationType", None, None, "rainmaker-tl", process_dot=False)
-#
-# process_master("PropertyTax", "Floor", None, None, "rainmaker-pt")
-# process_master("PropertyTax", "OccupancyType",
-#                None,
-#                None, "rainmaker-pt")
-#
-# process_master("PropertyTax", "OwnerType",
-#                None,
-#                None, "rainmaker-pt")
-#
-# process_master("PropertyTax", "OwnerTypeDocument",
-#                None,
-#                None, "rainmaker-pt")
-#
-# process_master("PropertyTax", "OwnerShipCategory",
-#                None,
-#                None, "rainmaker-pt", prefix="PropertyTax_Billing_Slab")
-#
-# process_master("PropertyTax", "PropertySubType",
-#                None,
-#                None, "rainmaker-pt", prefix="PropertyTax_Billing_Slab")
-#
-# process_master("PropertyTax", "SubOwnerShipCategory",
-#                None,
-#                None, "rainmaker-pt", prefix="PropertyTax_Billing_Slab")
-#
-# process_master("PropertyTax", "UsageCategoryDetail",
-#                None,
-#                None, "rainmaker-pt", prefix="PropertyTax_Billing_Slab")
-#
-# process_master("PropertyTax", "UsageCategoryMajor",
-#                None,
-#                None, "rainmaker-pt", prefix="PropertyTax_Billing_Slab")
-#
-# process_master("PropertyTax", "UsageCategoryMinor",
-#                None,
-#                None, "rainmaker-pt", prefix="PropertyTax_Billing_Slab")
-#
-# process_master("PropertyTax", "UsageCategorySubMinor",
-#                None,
-#                None, "rainmaker-pt", prefix="PropertyTax_Billing_Slab")
-#
-# process_master("PropertyTax", "PropertyType",
-#                None,
-#                None, "rainmaker-pt", prefix="PropertyTax_Billing_Slab")
 
-process_boundary(auth_token=auth_token)
+if __name__ == "__main__":
+    # process_master("common-masters", "Department", None, None, "rainmaker-common")
+    # process_master("common-masters", "Designation", None, None, "rainmaker-common")
+    # process_master("common-masters", "DocumentType", None, None, "rainmaker-common")
+    # process_master("common-masters", "OwnerShipCategory", None, None, "rainmaker-common")
+    # process_master("common-masters", "OwnerType", None, None, "rainmaker-common")
+    # process_master("common-masters", "OwnerShipCategory", None, None, "rainmaker-common", process_dot=True)
+    # process_master("common-masters", "StructureType", None, None, "rainmaker-common", process_dot=True)
+    # process_master("common-masters", "UOM", None, None, "rainmaker-common")
+    #
+    # process_master("TradeLicense", "TradeType", None, None, "rainmaker-tl", process_dot=True)
+    # process_master("TradeLicense", "AccessoriesCategory", None, None, "rainmaker-tl")
+    # process_master("TradeLicense", "ApplicationType", None, None, "rainmaker-tl", process_dot=False)
+    #
+    # process_master("PropertyTax", "Floor", None, None, "rainmaker-pt")
+    # process_master("PropertyTax", "OccupancyType",
+    #                None,
+    #                None, "rainmaker-pt")
+    #
+    # process_master("PropertyTax", "OwnerType",
+    #                None,
+    #                None, "rainmaker-pt")
+    #
+    # process_master("PropertyTax", "OwnerTypeDocument",
+    #                None,
+    #                None, "rainmaker-pt")
+    #
+    # process_master("PropertyTax", "OwnerShipCategory",
+    #                None,
+    #                None, "rainmaker-pt", prefix="PropertyTax_Billing_Slab")
+    #
+    # process_master("PropertyTax", "PropertySubType",
+    #                None,
+    #                None, "rainmaker-pt", prefix="PropertyTax_Billing_Slab")
+    #
+    # process_master("PropertyTax", "SubOwnerShipCategory",
+    #                None,
+    #                None, "rainmaker-pt", prefix="PropertyTax_Billing_Slab")
+    #
+    # process_master("PropertyTax", "UsageCategoryDetail",
+    #                None,
+    #                None, "rainmaker-pt", prefix="PropertyTax_Billing_Slab")
+    #
+    # process_master("PropertyTax", "UsageCategoryMajor",
+    #                None,
+    #                None, "rainmaker-pt", prefix="PropertyTax_Billing_Slab")
+    #
+    # process_master("PropertyTax", "UsageCategoryMinor",
+    #                None,
+    #                None, "rainmaker-pt", prefix="PropertyTax_Billing_Slab")
+    #
+    # process_master("PropertyTax", "UsageCategorySubMinor",
+    #                None,
+    #                None, "rainmaker-pt", prefix="PropertyTax_Billing_Slab")
+    #
+    # process_master("PropertyTax", "PropertyType",
+    #                None,
+    #                None, "rainmaker-pt", prefix="PropertyTax_Billing_Slab")
+
+    process_boundary(auth_token=auth_token)

@@ -53,6 +53,20 @@ data = """
 SUPERUSER - /tl-calculator/billingslab/_search, /tl-calculator/billingslab/_create, /tl-calculator/billingslab/_update,egov-mdms-service/v1/_search, hr-employee-v2/employees/_search, egov-location/location/v11/tenant/_search, user/_search, /citizen/_create, /profile/_update, /bill/_search, /receipts/_search,
 /otp/v1/_validate, /user-otp/v1/_send
 """
+
+data = """
+/egov-workflow-v2/egov-wf/process/_transition,
+/egov-workflow-v2/egov-wf/process/_search,
+/egov-workflow-v2/egov-wf/businessservice/_create,
+/egov-workflow-v2/egov-wf/businessservice/_update,
+/egov-workflow-v2/egov-wf/businessservice/_search
+"""
+
+data = """
+/egov-workflow-v2/egov-wf/businessservice/_search
+"""
+
+
 if __name__ == "__main__":
     load_role_data()
 
@@ -60,8 +74,8 @@ if __name__ == "__main__":
     UI_actions = jsonpath(actions, "$[?(@.enabled is True)]")
     # print (BE_actions)
     import re
-
     data = re.sub(r"[\s]+", "", data)
+
 
     matched = set()
 
@@ -76,22 +90,54 @@ if __name__ == "__main__":
         if not found:
             print("Url - " + url + " has no entry in MDMS")
 
-    role = "TL_APPROVER"
+    role_actions_mapped = jsonpath(role_actions, "$.[?(@.rolecode == '{}')]].actionid".format("CSR"))
+    role_actions_mapped2 = jsonpath(role_actions, "$.[?(@.rolecode == '{}')]].actionid".format("GRO"))
+    role_actions_mapped3 = jsonpath(role_actions, "$.[?(@.rolecode == '{}')]].actionid".format("DGRO"))
+    role_actions_mapped4 = jsonpath(role_actions, "$.[?(@.rolecode == '{}')]].actionid".format("PGR-ADMIN"))
+    common = (set(role_actions_mapped).intersection(role_actions_mapped2).intersection(role_actions_mapped3).intersection(role_actions_mapped4))
+    for c in common:
+        print(c, jsonpath(actions, "$[?(@.id == {})]".format(c)))
 
-    role_actions_mapped = jsonpath(role_actions, "$.[?(@.rolecode == '{}')]].actionid".format(role))
+    exit(0)
+    new_data = []
+    for role in ["TL_DOC_VERIFIER", "TL_FIELD_INSPECTOR"]:
+        role_actions_mapped = jsonpath(role_actions, "$.[?(@.rolecode == '{}')]].actionid".format(role))
 
-    if role_actions_mapped:
-        missing_ids = matched - set(role_actions_mapped)
-    else:
-        missing_ids = matched
+        if role_actions_mapped:
+            missing_ids = common - set(role_actions_mapped)
+        else:
+            missing_ids = common
+
+        for id in missing_ids:
+            new_data.append({
+                "rolecode": role,
+                "actionid": id,
+                "actioncode": "",
+                "tenantId": "pb"
+            })
+
+    print(json.dumps(new_data, indent=2))
+    exit(0)
+
+
+    roles = ["CITIZEN"]
 
     new_data = []
-    for id in missing_ids:
-        new_data.append({
-            "rolecode": role,
-            "actionid": id,
-            "actioncode": "",
-            "tenantId": "pb"
-        })
+
+    for role in roles:
+        role_actions_mapped = jsonpath(role_actions, "$.[?(@.rolecode == '{}')]].actionid".format(role))
+
+        if role_actions_mapped:
+            missing_ids = matched - set(role_actions_mapped)
+        else:
+            missing_ids = matched
+
+        for id in missing_ids:
+            new_data.append({
+                "rolecode": role,
+                "actionid": id,
+                "actioncode": "",
+                "tenantId": "pb"
+            })
 
     print(json.dumps(new_data,indent=2))
