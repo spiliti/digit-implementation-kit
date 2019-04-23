@@ -108,7 +108,7 @@ def process_boundary_file(auth_token, boundary_path, generate_file=True, write_l
             locale_module = "rainmaker-" + tenant_id
 
             for l1 in b["boundary"]["children"]:
-                code = get_code(tenant_id + "_" + boundary_type, l1["code"])
+                code = get_code(tenant_id + "_" + boundary_type + "_ZONE", l1["code"])
                 if code not in used_codes:
                     used_codes.add(code)
                     locale_data.append({
@@ -119,11 +119,11 @@ def process_boundary_file(auth_token, boundary_path, generate_file=True, write_l
                     })
 
                 for l2 in l1["children"]:
-                    code = get_code(tenant_id + "_" + boundary_type, l2["code"])
+                    code = get_code(tenant_id + "_" + boundary_type + "_BLOCK", l2["code"])
                     if code not in used_codes:
                         used_codes.add(code)
                         locale_data.append({
-                            "code": get_code(tenant_id + "_" + boundary_type, l2["code"]),
+                            "code": code,
                             "message": l2["name"],
                             "module": locale_module,
                             "locale": "en_IN"
@@ -134,7 +134,7 @@ def process_boundary_file(auth_token, boundary_path, generate_file=True, write_l
                         if code not in used_codes:
                             used_codes.add(code)
                             locale_data.append({
-                                "code": get_code(tenant_id + "_" + boundary_type, l3["code"]),
+                                "code": code,
                                 "message": l3["name"],
                                 "module": locale_module,
                                 "locale": "en_IN"
@@ -229,4 +229,4 @@ def process_boundary(auth_token):
 #                None,
 #                None, "rainmaker-pt", prefix="PropertyTax_Billing_Slab")
 
-# process_boundary()
+process_boundary(auth_token=auth_token)
