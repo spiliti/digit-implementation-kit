@@ -39,9 +39,10 @@ OC_MAP = {
 
 from json import JSONEncoder
 
+
 class MyEncoder(JSONEncoder):
-        def default(self, o):
-            return o.__dict__
+    def default(self, o):
+        return o.__dict__
 
 
 def convert_json(d, convert):
@@ -52,7 +53,7 @@ def convert_json(d, convert):
             for i, vv in enumerate(v):
                 new_d[convert(k)].append(convert_json(v[i], convert))
         else:
-            new_d[convert(k)] = convert_json(v,convert) if isinstance(v,dict) else v
+            new_d[convert(k)] = convert_json(v, convert) if isinstance(v, dict) else v
     return new_d
 
 
@@ -89,7 +90,7 @@ def residential_house_parse(property, context):
         unit = Unit(floor_no=FLOOR_MAP[floor],
                     usage_category_major="RESIDENTIAL",
                     occupancy_type=OC_MAP[occupancy],
-                    unit_area=float(covered_area)/9)
+                    unit_area=float(covered_area) / 9)
 
         if OC_MAP[occupancy] == "RENTED":
             unit.arv = 0
@@ -98,7 +99,7 @@ def residential_house_parse(property, context):
 
     property.old_property_id = "RID{}".format(context["ReturnId"])
     property.additional_details = {
-        "legacyInfo" : {
+        "legacyInfo": {
             "ReturnID": context["ReturnId"],
             "UploadYear": context["Session"],
             "TaxAmt": context["TaxAmt"],
@@ -133,10 +134,10 @@ def residential_house_parse(property, context):
 
     property.tenant_id = 'pb.testing'
     locality = Locality(code=context["new_locality_code"])
-    property.address = Address(city="Jalandhar", door_no=context["HouseNo"],locality=locality)
+    property.address = Address(city="Jalandhar", door_no=context["HouseNo"], locality=locality)
     pd.financial_year = "2019-20"
     x = MyEncoder().encode(property)
-    print (json.dumps(convert_json(json.loads(x), underscore_to_camel), indent=2))
+    print(json.dumps(convert_json(json.loads(x), underscore_to_camel), indent=2))
 
 
 BC_MAP = {
@@ -155,6 +156,7 @@ BC_MAP = {
     "Marriage Palaces": ""
 }
 
+
 # OTHERINDUSTRIAL,OTHERINDUSTRIALSUBMINOR,INDUSTRIAL,
 # INSTITUTIONAL,
 # OTHERS
@@ -172,7 +174,6 @@ BC_MAP = {
 # EVENTSPACE > MARRIAGEPALACE
 # MULTIPLEX > ENTERTAINMENT
 # RETAIL > MALLS
-
 
 
 class IkonProperty(Property):
@@ -235,7 +236,28 @@ class IkonProperty(Property):
         else:
             raise Exception("No Mapping function")
 
+        self.process_exemption(context)
+
         pass
+
+    def process_exemption(self, context):
+        EC_MAP = {
+            "Widows": "WIDOW",
+            "Non-Exempted": "NONE",
+            "Person, who had served, or are serving, in any rank, whether as a combatant or a non-combatant, in the Naval, Military or Air Forces of the Union of India": "DEFENSE",
+            "Joint Owners - Both/All Widows": "WIDOW",
+            "Handicapped": "HANDICAPPED",
+            "Freedom Fighters": "FREEDOMFIGHTER",
+            "BPL": "BPL"
+        }
+
+        ecat = context["ExemptionCategory"]
+
+        if ecat == "Joint Owners - Both/All Widows":
+            for owner in self.property_details[0].owners:
+                owner.owner_type = "WIDOW"
+        else:
+            self.property_details[0].owners[0].owner_type = EC_MAP[ecat]
 
 
 class PropertyTaxParser():
@@ -302,18 +324,117 @@ def parse_flat_information(text):
     return owners
 
 
-
 data = [
-{"SrNo":"1","ReturnId":"43","AcknowledgementNo":"ACK-131672065564201961","EntryDate":"03/04/18","Zone":"JALANDHAR","Sector":"1","Colony":"Anand Nagar","HouseNo":"413","Owner":"IQBAL JIT SINGH / JASWANT SINGH / 9855002240TEJVINDER SINGH / JASWANT SINGH / 9855002240","Floor":"Ground Floor / 549.00 / Residential / Self Occupied / Pucca / 183.00Ground Floor - Vacant / 1251.00 / Residential / Self Occupied / Pucca / 209.00","ResidentialRate":"0","CommercialRate":"0","ExemptionCategory":"Non-Exempted","LandUsedType":"Others","Usage":"Built Up","PlotArea":"200","TotalCoveredArea":"549","GrossTax":"392","FireCharges":"0","InterestAmt":"0","Penalty":"0","Rebate":"39","ExemptionAmt":"0","TaxAmt":"353","AmountPaid":"353","PaymentMode":"Cash","TransactionID":"","Bank":"","G8BookNo":"27514","G8ReceiptNo":"6","PaymentDate":"03/04/18","PropertyType":"Residential","BuildingCategory":"Residential Houses","Session":"2018-2019","Remarks":"","uuid":"8c2a7418-1d09-4d30-9f09-4a7b8cedef23","previous_returnid":None,"status":"STAGE1","tenantid":None,"batchname":None,"new_propertyid":None,"new_locality_code":"JALLC340"},
-{"SrNo":"2","ReturnId":"50","AcknowledgementNo":"ACK-131672073888111979","EntryDate":"03/04/18","Zone":"JALANDHAR","Sector":"1","Colony":"Janta Colony","HouseNo":"N/A","Owner":"MANPREET SINGH AULAKH / RANJIT SINGH AULAKH / 9501501007","Floor":"Ground Floor / 1620.00 / Residential / Self Occupied / Pucca / 540.00Ground Floor - Vacant / 657.00 / Residential / Self Occupied / Pucca / 110.001st Floor / 1170.00 / Residential / Self Occupied / Pucca / 195.00","ResidentialRate":"0","CommercialRate":"0","ExemptionCategory":"Non-Exempted","LandUsedType":"Others","Usage":"Built Up","PlotArea":"253","TotalCoveredArea":"2790","GrossTax":"845","FireCharges":"0","InterestAmt":"0","Penalty":"0","Rebate":"85","ExemptionAmt":"0","TaxAmt":"760","AmountPaid":"760","PaymentMode":"Cash","TransactionID":"","Bank":"","G8BookNo":"27514","G8ReceiptNo":"9","PaymentDate":"03/04/18","PropertyType":"Residential","BuildingCategory":"Residential Houses","Session":"2018-2019","Remarks":"","uuid":"8aeb2b94-b6fd-4dfb-ad88-10929740e9fa","previous_returnid":None,"status":"STAGE1","tenantid":None,"batchname":None,"new_propertyid":None,"new_locality_code":"JALLC566"},
-{"SrNo":"4","ReturnId":"156","AcknowledgementNo":"ACK-131672891544719647","EntryDate":"04/04/18","Zone":"JALANDHAR","Sector":"1","Colony":"Friends Colony","HouseNo":"6:00 AM","Owner":"S.L AGNISH/SHANTA SHARMA / KHUSHI RAM / 9876266781","Floor":"Ground Floor / 1449.00 / Residential / Self Occupied / Pucca / 805.001st Floor / 1449.00 / Residential / Self Occupied / Pucca / 403.00","ResidentialRate":"0","CommercialRate":"0","ExemptionCategory":"Non-Exempted","LandUsedType":"Others","Usage":"Built Up","PlotArea":"161","TotalCoveredArea":"2898","GrossTax":"1208","FireCharges":"0","InterestAmt":"0","Penalty":"0","Rebate":"121","ExemptionAmt":"0","TaxAmt":"1087","AmountPaid":"1087","PaymentMode":"Cash","TransactionID":"","Bank":"","G8BookNo":"27515","G8ReceiptNo":"24","PaymentDate":"04/04/18","PropertyType":"Residential","BuildingCategory":"Residential Houses","Session":"2018-2019","Remarks":"","uuid":"7f40c849-1f3f-493c-934b-de9c9d7f2ddb","previous_returnid":None,"status":"STAGE1","tenantid":None,"batchname":None,"new_propertyid":None,"new_locality_code":"JALLC140"},
-{"SrNo":"5","ReturnId":"158","AcknowledgementNo":"ACK-131672891840779817","EntryDate":"04/04/18","Zone":"JALANDHAR","Sector":"1","Colony":"Friends Colony","HouseNo":"1","Owner":"SARITA / SOM DATT SHARMA / 9814814775","Floor":"Ground Floor / 1656.00 / Residential / Self Occupied / Pucca / 920.001st Floor / 1656.00 / Residential / Self Occupied / Pucca / 460.00","ResidentialRate":"0","CommercialRate":"0","ExemptionCategory":"Non-Exempted","LandUsedType":"Others","Usage":"Built Up","PlotArea":"184","TotalCoveredArea":"3312","GrossTax":"1380","FireCharges":"0","InterestAmt":"0","Penalty":"0","Rebate":"138","ExemptionAmt":"0","TaxAmt":"1242","AmountPaid":"1242","PaymentMode":"Cash","TransactionID":"","Bank":"","G8BookNo":"27515","G8ReceiptNo":"25","PaymentDate":"04/04/18","PropertyType":"Residential","BuildingCategory":"Residential Houses","Session":"2018-2019","Remarks":"","uuid":"6e01e309-1e14-4d5e-91bb-26c5ac7e02d1","previous_returnid":None,"status":"STAGE1","tenantid":None,"batchname":None,"new_propertyid":None,"new_locality_code":"JALLC140"},
-{"SrNo":"7","ReturnId":"415","AcknowledgementNo":"ACK-131673854451010127","EntryDate":"05/04/18","Zone":"JALANDHAR","Sector":"1","Colony":"Angad Nagar","HouseNo":"128","Owner":"HARBHAJAN SINGH / THAKUR SINGH / 9915664430","Floor":"Ground Floor / 1800.00 / Residential / Self Occupied / Pucca / 600.001st Floor / 1800.00 / Residential / Self Occupied / Pucca / 300.00","ResidentialRate":"0","CommercialRate":"0","ExemptionCategory":"Non-Exempted","LandUsedType":"Others","Usage":"Built Up","PlotArea":"200","TotalCoveredArea":"3600","GrossTax":"900","FireCharges":"0","InterestAmt":"0","Penalty":"0","Rebate":"90","ExemptionAmt":"0","TaxAmt":"810","AmountPaid":"810","PaymentMode":"Cash","TransactionID":"","Bank":"","G8BookNo":"27518","G8ReceiptNo":"34","PaymentDate":"05/04/18","PropertyType":"Residential","BuildingCategory":"Residential Houses","Session":"2018-2019","Remarks":"","uuid":"9a0c67f2-9b2a-4181-9c77-aebd4762e240","previous_returnid":None,"status":"STAGE1","tenantid":None,"batchname":None,"new_propertyid":None,"new_locality_code":"JALLC341"},
-{"SrNo":"8","ReturnId":"451","AcknowledgementNo":"ACK-131674001043180235","EntryDate":"05/04/18","Zone":"JALANDHAR","Sector":"1","Colony":"Anand Nagar","HouseNo":"B-1/373","Owner":"SURJEET KAUR / HARJEET SINGH / 9872093750","Floor":"Ground Floor / 2106.00 / Residential / Self Occupied / Pucca / 702.00Ground Floor - Vacant / 2097.00 / Residential / Self Occupied / Pucca / 350.00","ResidentialRate":"0","CommercialRate":"0","ExemptionCategory":"Non-Exempted","LandUsedType":"Others","Usage":"Built Up","PlotArea":"467","TotalCoveredArea":"2106","GrossTax":"1052","FireCharges":"0","InterestAmt":"0","Penalty":"0","Rebate":"105","ExemptionAmt":"0","TaxAmt":"947","AmountPaid":"947","PaymentMode":"Online","TransactionID":"2018TXN000451","Bank":"","G8BookNo":"27634","G8ReceiptNo":"40","PaymentDate":"05/04/18","PropertyType":"Residential","BuildingCategory":"Residential Houses","Session":"2018-2019","Remarks":"NO","uuid":"d5098977-cc5d-4054-89ec-3d44ab453ca4","previous_returnid":None,"status":"STAGE1","tenantid":None,"batchname":None,"new_propertyid":None,"new_locality_code":"JALLC340"},
-{"SrNo":"10","ReturnId":"482","AcknowledgementNo":"ACK-131674637511723224","EntryDate":"06/04/18","Zone":"JALANDHAR","Sector":"1","Colony":"New Anand Nagar","HouseNo":"119","Owner":"RAGHBIR SINGH / PURAN SINGH / 9815017680","Floor":"Ground Floor / 1800.00 / Residential / Self Occupied / Pucca / 600.00Ground Floor - Vacant / 270.00 / Residential / Self Occupied / Pucca / 45.001st Floor / 1600.00 / Residential / Self Occupied / Pucca / 267.00","ResidentialRate":"0","CommercialRate":"0","ExemptionCategory":"Non-Exempted","LandUsedType":"Others","Usage":"Built Up","PlotArea":"230","TotalCoveredArea":"3400","GrossTax":"912","FireCharges":"0","InterestAmt":"0","Penalty":"0","Rebate":"91","ExemptionAmt":"0","TaxAmt":"821","AmountPaid":"821","PaymentMode":"Cash","TransactionID":"","Bank":"","G8BookNo":"26867","G8ReceiptNo":"17","PaymentDate":"06/04/18","PropertyType":"Residential","BuildingCategory":"Residential Houses","Session":"2018-2019","Remarks":"","uuid":"17c2482c-5ea8-4287-bcad-16221f948a20","previous_returnid":None,"status":"STAGE1","tenantid":None,"batchname":None,"new_propertyid":None,"new_locality_code":"JALLC683"},
-{"SrNo":"11","ReturnId":"483","AcknowledgementNo":"ACK-131674637943483282","EntryDate":"06/04/18","Zone":"JALANDHAR","Sector":"1","Colony":"Anand Nagar","HouseNo":"B-1-329","Owner":"AJIT SINGH / SANTA SINGH / 8427272123KULBIR SINGH / SWARAN SINGH / 8427272123","Floor":"Ground Floor / 1500.00 / Residential / Self Occupied / Pucca / 500.00Ground Floor - Vacant / 300.00 / Residential / Self Occupied / Pucca / 50.001st Floor / 1200.00 / Residential / Self Occupied / Pucca / 200.00","ResidentialRate":"0","CommercialRate":"0","ExemptionCategory":"Non-Exempted","LandUsedType":"Others","Usage":"Built Up","PlotArea":"200","TotalCoveredArea":"2700","GrossTax":"750","FireCharges":"0","InterestAmt":"0","Penalty":"0","Rebate":"75","ExemptionAmt":"0","TaxAmt":"675","AmountPaid":"675","PaymentMode":"Cash","TransactionID":"","Bank":"","G8BookNo":"26867","G8ReceiptNo":"18","PaymentDate":"06/04/18","PropertyType":"Residential","BuildingCategory":"Residential Houses","Session":"2018-2019","Remarks":"","uuid":"da71840a-4213-401f-8eeb-e0b75e009236","previous_returnid":None,"status":"STAGE1","tenantid":None,"batchname":None,"new_propertyid":None,"new_locality_code":"JALLC340"},
-{"SrNo":"12","ReturnId":"575","AcknowledgementNo":"ACK-131675516782322293","EntryDate":"07/04/18","Zone":"JALANDHAR","Sector":"1","Colony":"Anand Nagar","HouseNo":"46/2","Owner":"HARJIT SINGH / GIAN SINGH / 9872093750","Floor":"Ground Floor / 702.00 / Residential / Self Occupied / Pucca / 234.00Ground Floor - Vacant / 1701.00 / Residential / Self Occupied / Pucca / 284.001st Floor / 702.00 / Residential / Self Occupied / Pucca / 117.00","ResidentialRate":"0","CommercialRate":"0","ExemptionCategory":"Non-Exempted","LandUsedType":"Others","Usage":"Built Up","PlotArea":"267","TotalCoveredArea":"1404","GrossTax":"635","FireCharges":"0","InterestAmt":"0","Penalty":"0","Rebate":"64","ExemptionAmt":"0","TaxAmt":"571","AmountPaid":"571","PaymentMode":"Online","TransactionID":"2018TXN000575","Bank":"","G8BookNo":"27635","G8ReceiptNo":"10","PaymentDate":"07/04/18","PropertyType":"Residential","BuildingCategory":"Residential Houses","Session":"2018-2019","Remarks":"no","uuid":"23fdbf04-4828-4764-b59a-b39314bc4bbe","previous_returnid":None,"status":"STAGE1","tenantid":None,"batchname":None,"new_propertyid":None,"new_locality_code":"JALLC340"},
-{"SrNo":"13","ReturnId":"619","AcknowledgementNo":"ACK-131677225074654318","EntryDate":"09/04/18","Zone":"JALANDHAR","Sector":"1","Colony":"Greater Kailash Nagar","HouseNo":"556-57","Owner":"MOHINDER PAL SINGH / BELWANT SINGH / 9815904950","Floor":"Ground Floor / 3150.00 / Residential / Self Occupied / Pucca / 1750.001st Floor / 1494.00 / Residential / Self Occupied / Pucca / 415.00","ResidentialRate":"0","CommercialRate":"0","ExemptionCategory":"Non-Exempted","LandUsedType":"Others","Usage":"Built Up","PlotArea":"350","TotalCoveredArea":"4644","GrossTax":"2165","FireCharges":"0","InterestAmt":"0","Penalty":"0","Rebate":"217","ExemptionAmt":"0","TaxAmt":"1948","AmountPaid":"1948","PaymentMode":"Cash","TransactionID":"","Bank":"","G8BookNo":"26867","G8ReceiptNo":"31","PaymentDate":"09/04/18","PropertyType":"Residential","BuildingCategory":"Residential Houses","Session":"2018-2019","Remarks":"","uuid":"76026ed2-a4cf-40a8-8b92-fc788142fe25","previous_returnid":None,"status":"STAGE1","tenantid":None,"batchname":None,"new_propertyid":None,"new_locality_code":"JALLC149"}
+    {"SrNo": "1", "ReturnId": "43", "AcknowledgementNo": "ACK-131672065564201961", "EntryDate": "03/04/18",
+     "Zone": "JALANDHAR", "Sector": "1", "Colony": "Anand Nagar", "HouseNo": "413",
+     "Owner": "IQBAL JIT SINGH / JASWANT SINGH / 9855002240TEJVINDER SINGH / JASWANT SINGH / 9855002240",
+     "Floor": "Ground Floor / 549.00 / Residential / Self Occupied / Pucca / 183.00Ground Floor - Vacant / 1251.00 / Residential / Self Occupied / Pucca / 209.00",
+     "ResidentialRate": "0", "CommercialRate": "0", "ExemptionCategory": "Non-Exempted", "LandUsedType": "Others",
+     "Usage": "Built Up", "PlotArea": "200", "TotalCoveredArea": "549", "GrossTax": "392", "FireCharges": "0",
+     "InterestAmt": "0", "Penalty": "0", "Rebate": "39", "ExemptionAmt": "0", "TaxAmt": "353", "AmountPaid": "353",
+     "PaymentMode": "Cash", "TransactionID": "", "Bank": "", "G8BookNo": "27514", "G8ReceiptNo": "6",
+     "PaymentDate": "03/04/18", "PropertyType": "Residential", "BuildingCategory": "Residential Houses",
+     "Session": "2018-2019", "Remarks": "", "uuid": "8c2a7418-1d09-4d30-9f09-4a7b8cedef23", "previous_returnid": None,
+     "status": "STAGE1", "tenantid": None, "batchname": None, "new_propertyid": None, "new_locality_code": "JALLC340"},
+    {"SrNo": "2", "ReturnId": "50", "AcknowledgementNo": "ACK-131672073888111979", "EntryDate": "03/04/18",
+     "Zone": "JALANDHAR", "Sector": "1", "Colony": "Janta Colony", "HouseNo": "N/A",
+     "Owner": "MANPREET SINGH AULAKH / RANJIT SINGH AULAKH / 9501501007",
+     "Floor": "Ground Floor / 1620.00 / Residential / Self Occupied / Pucca / 540.00Ground Floor - Vacant / 657.00 / Residential / Self Occupied / Pucca / 110.001st Floor / 1170.00 / Residential / Self Occupied / Pucca / 195.00",
+     "ResidentialRate": "0", "CommercialRate": "0", "ExemptionCategory": "Non-Exempted", "LandUsedType": "Others",
+     "Usage": "Built Up", "PlotArea": "253", "TotalCoveredArea": "2790", "GrossTax": "845", "FireCharges": "0",
+     "InterestAmt": "0", "Penalty": "0", "Rebate": "85", "ExemptionAmt": "0", "TaxAmt": "760", "AmountPaid": "760",
+     "PaymentMode": "Cash", "TransactionID": "", "Bank": "", "G8BookNo": "27514", "G8ReceiptNo": "9",
+     "PaymentDate": "03/04/18", "PropertyType": "Residential", "BuildingCategory": "Residential Houses",
+     "Session": "2018-2019", "Remarks": "", "uuid": "8aeb2b94-b6fd-4dfb-ad88-10929740e9fa", "previous_returnid": None,
+     "status": "STAGE1", "tenantid": None, "batchname": None, "new_propertyid": None, "new_locality_code": "JALLC566"},
+    {"SrNo": "4", "ReturnId": "156", "AcknowledgementNo": "ACK-131672891544719647", "EntryDate": "04/04/18",
+     "Zone": "JALANDHAR", "Sector": "1", "Colony": "Friends Colony", "HouseNo": "6:00 AM",
+     "Owner": "S.L AGNISH/SHANTA SHARMA / KHUSHI RAM / 9876266781",
+     "Floor": "Ground Floor / 1449.00 / Residential / Self Occupied / Pucca / 805.001st Floor / 1449.00 / Residential / Self Occupied / Pucca / 403.00",
+     "ResidentialRate": "0", "CommercialRate": "0", "ExemptionCategory": "Non-Exempted", "LandUsedType": "Others",
+     "Usage": "Built Up", "PlotArea": "161", "TotalCoveredArea": "2898", "GrossTax": "1208", "FireCharges": "0",
+     "InterestAmt": "0", "Penalty": "0", "Rebate": "121", "ExemptionAmt": "0", "TaxAmt": "1087", "AmountPaid": "1087",
+     "PaymentMode": "Cash", "TransactionID": "", "Bank": "", "G8BookNo": "27515", "G8ReceiptNo": "24",
+     "PaymentDate": "04/04/18", "PropertyType": "Residential", "BuildingCategory": "Residential Houses",
+     "Session": "2018-2019", "Remarks": "", "uuid": "7f40c849-1f3f-493c-934b-de9c9d7f2ddb", "previous_returnid": None,
+     "status": "STAGE1", "tenantid": None, "batchname": None, "new_propertyid": None, "new_locality_code": "JALLC140"},
+    {"SrNo": "5", "ReturnId": "158", "AcknowledgementNo": "ACK-131672891840779817", "EntryDate": "04/04/18",
+     "Zone": "JALANDHAR", "Sector": "1", "Colony": "Friends Colony", "HouseNo": "1",
+     "Owner": "SARITA / SOM DATT SHARMA / 9814814775",
+     "Floor": "Ground Floor / 1656.00 / Residential / Self Occupied / Pucca / 920.001st Floor / 1656.00 / Residential / Self Occupied / Pucca / 460.00",
+     "ResidentialRate": "0", "CommercialRate": "0", "ExemptionCategory": "Non-Exempted", "LandUsedType": "Others",
+     "Usage": "Built Up", "PlotArea": "184", "TotalCoveredArea": "3312", "GrossTax": "1380", "FireCharges": "0",
+     "InterestAmt": "0", "Penalty": "0", "Rebate": "138", "ExemptionAmt": "0", "TaxAmt": "1242", "AmountPaid": "1242",
+     "PaymentMode": "Cash", "TransactionID": "", "Bank": "", "G8BookNo": "27515", "G8ReceiptNo": "25",
+     "PaymentDate": "04/04/18", "PropertyType": "Residential", "BuildingCategory": "Residential Houses",
+     "Session": "2018-2019", "Remarks": "", "uuid": "6e01e309-1e14-4d5e-91bb-26c5ac7e02d1", "previous_returnid": None,
+     "status": "STAGE1", "tenantid": None, "batchname": None, "new_propertyid": None, "new_locality_code": "JALLC140"},
+    {"SrNo": "7", "ReturnId": "415", "AcknowledgementNo": "ACK-131673854451010127", "EntryDate": "05/04/18",
+     "Zone": "JALANDHAR", "Sector": "1", "Colony": "Angad Nagar", "HouseNo": "128",
+     "Owner": "HARBHAJAN SINGH / THAKUR SINGH / 9915664430",
+     "Floor": "Ground Floor / 1800.00 / Residential / Self Occupied / Pucca / 600.001st Floor / 1800.00 / Residential / Self Occupied / Pucca / 300.00",
+     "ResidentialRate": "0", "CommercialRate": "0", "ExemptionCategory": "Non-Exempted", "LandUsedType": "Others",
+     "Usage": "Built Up", "PlotArea": "200", "TotalCoveredArea": "3600", "GrossTax": "900", "FireCharges": "0",
+     "InterestAmt": "0", "Penalty": "0", "Rebate": "90", "ExemptionAmt": "0", "TaxAmt": "810", "AmountPaid": "810",
+     "PaymentMode": "Cash", "TransactionID": "", "Bank": "", "G8BookNo": "27518", "G8ReceiptNo": "34",
+     "PaymentDate": "05/04/18", "PropertyType": "Residential", "BuildingCategory": "Residential Houses",
+     "Session": "2018-2019", "Remarks": "", "uuid": "9a0c67f2-9b2a-4181-9c77-aebd4762e240", "previous_returnid": None,
+     "status": "STAGE1", "tenantid": None, "batchname": None, "new_propertyid": None, "new_locality_code": "JALLC341"},
+    {"SrNo": "8", "ReturnId": "451", "AcknowledgementNo": "ACK-131674001043180235", "EntryDate": "05/04/18",
+     "Zone": "JALANDHAR", "Sector": "1", "Colony": "Anand Nagar", "HouseNo": "B-1/373",
+     "Owner": "SURJEET KAUR / HARJEET SINGH / 9872093750",
+     "Floor": "Ground Floor / 2106.00 / Residential / Self Occupied / Pucca / 702.00Ground Floor - Vacant / 2097.00 / Residential / Self Occupied / Pucca / 350.00",
+     "ResidentialRate": "0", "CommercialRate": "0", "ExemptionCategory": "Non-Exempted", "LandUsedType": "Others",
+     "Usage": "Built Up", "PlotArea": "467", "TotalCoveredArea": "2106", "GrossTax": "1052", "FireCharges": "0",
+     "InterestAmt": "0", "Penalty": "0", "Rebate": "105", "ExemptionAmt": "0", "TaxAmt": "947", "AmountPaid": "947",
+     "PaymentMode": "Online", "TransactionID": "2018TXN000451", "Bank": "", "G8BookNo": "27634", "G8ReceiptNo": "40",
+     "PaymentDate": "05/04/18", "PropertyType": "Residential", "BuildingCategory": "Residential Houses",
+     "Session": "2018-2019", "Remarks": "NO", "uuid": "d5098977-cc5d-4054-89ec-3d44ab453ca4", "previous_returnid": None,
+     "status": "STAGE1", "tenantid": None, "batchname": None, "new_propertyid": None, "new_locality_code": "JALLC340"},
+    {"SrNo": "10", "ReturnId": "482", "AcknowledgementNo": "ACK-131674637511723224", "EntryDate": "06/04/18",
+     "Zone": "JALANDHAR", "Sector": "1", "Colony": "New Anand Nagar", "HouseNo": "119",
+     "Owner": "RAGHBIR SINGH / PURAN SINGH / 9815017680",
+     "Floor": "Ground Floor / 1800.00 / Residential / Self Occupied / Pucca / 600.00Ground Floor - Vacant / 270.00 / Residential / Self Occupied / Pucca / 45.001st Floor / 1600.00 / Residential / Self Occupied / Pucca / 267.00",
+     "ResidentialRate": "0", "CommercialRate": "0", "ExemptionCategory": "Non-Exempted", "LandUsedType": "Others",
+     "Usage": "Built Up", "PlotArea": "230", "TotalCoveredArea": "3400", "GrossTax": "912", "FireCharges": "0",
+     "InterestAmt": "0", "Penalty": "0", "Rebate": "91", "ExemptionAmt": "0", "TaxAmt": "821", "AmountPaid": "821",
+     "PaymentMode": "Cash", "TransactionID": "", "Bank": "", "G8BookNo": "26867", "G8ReceiptNo": "17",
+     "PaymentDate": "06/04/18", "PropertyType": "Residential", "BuildingCategory": "Residential Houses",
+     "Session": "2018-2019", "Remarks": "", "uuid": "17c2482c-5ea8-4287-bcad-16221f948a20", "previous_returnid": None,
+     "status": "STAGE1", "tenantid": None, "batchname": None, "new_propertyid": None, "new_locality_code": "JALLC683"},
+    {"SrNo": "11", "ReturnId": "483", "AcknowledgementNo": "ACK-131674637943483282", "EntryDate": "06/04/18",
+     "Zone": "JALANDHAR", "Sector": "1", "Colony": "Anand Nagar", "HouseNo": "B-1-329",
+     "Owner": "AJIT SINGH / SANTA SINGH / 8427272123KULBIR SINGH / SWARAN SINGH / 8427272123",
+     "Floor": "Ground Floor / 1500.00 / Residential / Self Occupied / Pucca / 500.00Ground Floor - Vacant / 300.00 / Residential / Self Occupied / Pucca / 50.001st Floor / 1200.00 / Residential / Self Occupied / Pucca / 200.00",
+     "ResidentialRate": "0", "CommercialRate": "0", "ExemptionCategory": "Non-Exempted", "LandUsedType": "Others",
+     "Usage": "Built Up", "PlotArea": "200", "TotalCoveredArea": "2700", "GrossTax": "750", "FireCharges": "0",
+     "InterestAmt": "0", "Penalty": "0", "Rebate": "75", "ExemptionAmt": "0", "TaxAmt": "675", "AmountPaid": "675",
+     "PaymentMode": "Cash", "TransactionID": "", "Bank": "", "G8BookNo": "26867", "G8ReceiptNo": "18",
+     "PaymentDate": "06/04/18", "PropertyType": "Residential", "BuildingCategory": "Residential Houses",
+     "Session": "2018-2019", "Remarks": "", "uuid": "da71840a-4213-401f-8eeb-e0b75e009236", "previous_returnid": None,
+     "status": "STAGE1", "tenantid": None, "batchname": None, "new_propertyid": None, "new_locality_code": "JALLC340"},
+    {"SrNo": "12", "ReturnId": "575", "AcknowledgementNo": "ACK-131675516782322293", "EntryDate": "07/04/18",
+     "Zone": "JALANDHAR", "Sector": "1", "Colony": "Anand Nagar", "HouseNo": "46/2",
+     "Owner": "HARJIT SINGH / GIAN SINGH / 9872093750",
+     "Floor": "Ground Floor / 702.00 / Residential / Self Occupied / Pucca / 234.00Ground Floor - Vacant / 1701.00 / Residential / Self Occupied / Pucca / 284.001st Floor / 702.00 / Residential / Self Occupied / Pucca / 117.00",
+     "ResidentialRate": "0", "CommercialRate": "0", "ExemptionCategory": "Non-Exempted", "LandUsedType": "Others",
+     "Usage": "Built Up", "PlotArea": "267", "TotalCoveredArea": "1404", "GrossTax": "635", "FireCharges": "0",
+     "InterestAmt": "0", "Penalty": "0", "Rebate": "64", "ExemptionAmt": "0", "TaxAmt": "571", "AmountPaid": "571",
+     "PaymentMode": "Online", "TransactionID": "2018TXN000575", "Bank": "", "G8BookNo": "27635", "G8ReceiptNo": "10",
+     "PaymentDate": "07/04/18", "PropertyType": "Residential", "BuildingCategory": "Residential Houses",
+     "Session": "2018-2019", "Remarks": "no", "uuid": "23fdbf04-4828-4764-b59a-b39314bc4bbe", "previous_returnid": None,
+     "status": "STAGE1", "tenantid": None, "batchname": None, "new_propertyid": None, "new_locality_code": "JALLC340"},
+    {"SrNo": "13", "ReturnId": "619", "AcknowledgementNo": "ACK-131677225074654318", "EntryDate": "09/04/18",
+     "Zone": "JALANDHAR", "Sector": "1", "Colony": "Greater Kailash Nagar", "HouseNo": "556-57",
+     "Owner": "MOHINDER PAL SINGH / BELWANT SINGH / 9815904950",
+     "Floor": "Ground Floor / 3150.00 / Residential / Self Occupied / Pucca / 1750.001st Floor / 1494.00 / Residential / Self Occupied / Pucca / 415.00",
+     "ResidentialRate": "0", "CommercialRate": "0", "ExemptionCategory": "Non-Exempted", "LandUsedType": "Others",
+     "Usage": "Built Up", "PlotArea": "350", "TotalCoveredArea": "4644", "GrossTax": "2165", "FireCharges": "0",
+     "InterestAmt": "0", "Penalty": "0", "Rebate": "217", "ExemptionAmt": "0", "TaxAmt": "1948", "AmountPaid": "1948",
+     "PaymentMode": "Cash", "TransactionID": "", "Bank": "", "G8BookNo": "26867", "G8ReceiptNo": "31",
+     "PaymentDate": "09/04/18", "PropertyType": "Residential", "BuildingCategory": "Residential Houses",
+     "Session": "2018-2019", "Remarks": "", "uuid": "76026ed2-a4cf-40a8-8b92-fc788142fe25", "previous_returnid": None,
+     "status": "STAGE1", "tenantid": None, "batchname": None, "new_propertyid": None, "new_locality_code": "JALLC149"}
 ]
 # print(parse_owners_information(""))
 # data = [
