@@ -1,10 +1,13 @@
 import json
+from urllib.parse import urlparse, urljoin
 
-from pandas import read_html
+import requests
 
-from common import open_excel_file
-from uploader.PropertyTax import RequestInfo, PropertyCreate, Property, PropertyDetail, Owner, CitizenInfo, Unit, \
-    Address, Locality
+from config import config
+
+from common import open_excel_file, superuser_login
+from uploader.PropertyTax import RequestInfo, Property, PropertyDetail, Owner, CitizenInfo, Unit, \
+    Address, Locality, Institution, PropertyCreateRequest
 import re
 
 FLOOR_MAP = {
@@ -40,7 +43,7 @@ OC_MAP = {
 from json import JSONEncoder
 
 
-class MyEncoder(JSONEncoder):
+class PropertyEncoder(JSONEncoder):
     def default(self, o):
         return o.__dict__
 
@@ -79,81 +82,23 @@ def convert_dump(*args, **kwargs):
     json.dump(*args, **kwargs)
 
 
-def residential_house_parse(property, context):
-    pd: PropertyDetail = property.property_details[0]
-    property.parse_owner_information(context["Owner"], context)
-    property.property_details[0].units = []
-
-    floor_set = set()
-
-    for floor, covered_area, usage, occupancy, _, tax in parse_flat_information(context["Floor"]):
-        unit = Unit(floor_no=FLOOR_MAP[floor],
-                    usage_category_major="RESIDENTIAL",
-                    occupancy_type=OC_MAP[occupancy],
-                    unit_area=float(covered_area) / 9)
-
-        if OC_MAP[occupancy] == "RENTED":
-            unit.arv = 0
-        floor_set.add(FLOOR_MAP[floor])
-        pd.units.append(unit)
-
-    property.old_property_id = "RID{}".format(context["ReturnId"])
-    property.additional_details = {
-        "legacyInfo": {
-            "ReturnID": context["ReturnId"],
-            "UploadYear": context["Session"],
-            "TaxAmt": context["TaxAmt"],
-            "AcknowledgementNo": context["AcknowledgementNo"],
-            "Colony": context["Colony"],
-            "Sector": context["Sector"],
-            "ExemptionCategory": context["ExemptionCategory"],
-            "TotalCoveredArea": context["TotalCoveredArea"],
-            "GrossTax": context["GrossTax"],
-            "AmountPaid": context["AmountPaid"]
-        }
-    }
-
-    pd.usage_category_major = "RESIDENTIAL"
-
-    pd.property_type = "BUILTUP"
-    pd.no_of_floors = len(floor_set)
-
-    pd.ownership_category = "INDIVIDUAL"
-
-    if len(pd.owners) > 1:
-        pd.sub_ownership_category = "MULTIPLEOWNERS"
-    else:
-        pd.sub_ownership_category = "SINGLEOWNER"
-
-    if len(pd.units) == 1 and "0" not in floor_set:
-        pd.property_sub_type = "SHAREDPROPERTY"
-        pd.build_up_area = context["PlotArea"]
-    else:
-        pd.property_sub_type = "INDEPENDENTPROPERTY"
-        pd.land_area = context["PlotArea"]
-
-    property.tenant_id = 'pb.testing'
-    locality = Locality(code=context["new_locality_code"])
-    property.address = Address(city="Jalandhar", door_no=context["HouseNo"], locality=locality)
-    pd.financial_year = "2019-20"
-    x = MyEncoder().encode(property)
-    print(json.dumps(convert_json(json.loads(x), underscore_to_camel), indent=2))
-
-
-BC_MAP = {
-    "Residential Houses": residential_house_parse,
-    "Government buildings, including buildings of Government Undertakings, Board or Corporation": "",
-    "Industrial (any manufacturing unit), educational institutions, and godowns": "",
-    "Commercial buildings including Restaurants (except multiplexes, malls, marriage palaces)": "",
-    "Flats": "",
-    "Hotels - Having beyond 50 rooms": "",
-    "Others": "",
-    "Mix-Use Building used for multiple purposes (like Residential+Commercial+Industrial)": "",
-    "Institutional buildings (other than educational institutions), including community halls/centres, sports stadiums, social clubs, bus stands, gold clubs, and such like buildings used for public purpose": "",
-    "Hotels - Having 50 rooms or below": "",
-    "Multiplex, Malls, Shopping Complex/Center etc.": "",
-    "Vacant Plot": "",
-    "Marriage Palaces": ""
+BD_UNIT_MAP = {
+    "Residential Houses": (None, None, None),
+    # "Government buildings, including buildings of Government Undertakings, Board or Corporation": "",
+    "Industrial (any manufacturing unit), educational institutions, and godowns": (
+    "INDUSTRIAL", "OTHERINDUSTRIALSUBMINOR", "OTHERINDUSTRIAL"),
+    "Commercial buildings including Restaurants (except multiplexes, malls, marriage palaces)": (
+    "COMMERCIAL", "OTHERCOMMERCIALSUBMINOR", "OTHERCOMMERCIAL"),
+    "Flats": (""),
+    "Hotels - Having beyond 50 rooms": ("COMMERCIAL", "HOTELS", None),
+    "Others": ("COMMERCIAL", "OTHERCOMMERCIALSUBMINOR", "OTHERCOMMERCIAL"),
+    # "Mix-Use Building used for multiple purposes (like Residential+Commercial+Industrial)": "",
+    "Institutional buildings (other than educational institutions), including community halls/centres, sports stadiums, social clubs, bus stands, gold clubs, and such like buildings used for public purpose": (
+    "INSTITUTIONAL", "OTHERINSTITUTIONALSUBMINOR", "OTHERINSTITUTIONAL"),
+    "Hotels - Having 50 rooms or below": ("COMMERCIAL", "HOTELS", None),
+    "Multiplex, Malls, Shopping Complex/Center etc.": ("COMMERCIAL", "RETAIL", "MALLS"),
+    "Vacant Plot": (None, None, None),
+    "Marriage Palaces": ("COMMERCIAL", "EVENTSPACE", "MARRIAGEPALACE")
 }
 
 
@@ -162,15 +107,6 @@ BC_MAP = {
 # OTHERS
 # INDIVIDUAL, SINGLEOWNER
 # INDIVIDUAL, MULTIPLEOWNERS
-# INSTITUTIONALPRIVATE, PRIVATECOMPANY
-# INSTITUTIONALPRIVATE, NGO
-# INSTITUTIONALPRIVATE, PRIVATETRUST
-# INSTITUTIONALPRIVATE, PRIVATEBOARD
-# OTHERSPRIVATEINSTITUITION,
-#
-# INSTITUTIONALGOVERNMENT, STATEGOVERNMENT
-# OTHERGOVERNMENTINSTITUITION
-# CENTRALGOVERNMENT
 # EVENTSPACE > MARRIAGEPALACE
 # MULTIPLEX > ENTERTAINMENT
 # RETAIL > MALLS
@@ -186,7 +122,38 @@ class IkonProperty(Property):
             "heightAbove36Feet": False
         })]
 
-    def parse_owner_information(self, owners, context=None):
+    def process_additional_details(self, context):
+        self.old_property_id = "RID{}".format(context["ReturnId"])
+        self.additional_details = {
+            "legacyInfo": {
+                "ReturnID": context["ReturnId"],
+                "UploadYear": context["Session"],
+                "TaxAmt": context["TaxAmt"],
+                "AcknowledgementNo": context["AcknowledgementNo"],
+                "Colony": context["Colony"],
+                "Sector": context["Sector"],
+                "ExemptionCategory": context["ExemptionCategory"],
+                "TotalCoveredArea": context["TotalCoveredArea"],
+                "GrossTax": context["GrossTax"],
+                "AmountPaid": context["AmountPaid"]
+            }
+        }
+
+    def process_usage(self, context):
+        pd = self.property_details[0]
+        if context["Usage"] == "Vacant Plot":
+            pd.property_type = "VACANT"
+            pd.no_of_floors = 1
+        else:
+            pd.property_type = "BUILTUP"
+
+    def process_address(self, context):
+        locality = Locality(code=context["new_locality_code"])
+        self.address = Address(city="Jalandhar", door_no=context["HouseNo"], locality=locality)
+
+    def process_owner_information(self, context=None):
+        owners = context["Owner"]
+
         for name, father_name, mobile in parse_owners_information(owners):
             owner = Owner(name=name, father_or_husband_name=father_name, mobile_number=mobile)
 
@@ -214,31 +181,128 @@ class IkonProperty(Property):
             if self.property_details[0].citizen_info is None:
                 self.property_details[0].citizen_info = CitizenInfo(name=name, mobile_number=mobile)
 
-    def parse_floor_information(self, text, context=None):
-        if text.strip() == 'Â':
-            self.property_details[0].property_type = "VACANT"
-            # "usageCategoryMajor": "RESIDENTIAL",
-            # "propertySubType": None,
-            # "landArea": "90000",
-            # "buildUpArea": None,
-            # "propertyType": "VACANT",
-            # "noOfFloors": 1,
-            # "subOwnershipCategory": "SINGLEOWNER",
-            # "ownershipCategory": "INDIVIDUAL",
+    def process_floor_information(self, context):
+        floors = context["Floor"].strip()
+        pd: PropertyDetail = self.property_details[0]
+        pd.units = []
 
+        if floors == 'Â' or floors == '':
+            pd.property_type = "VACANT"
+            pd.land_area = context["PlotArea"]
         else:
-            pass
 
-    def process_record(self, context):
-        func = BC_MAP[context["BuildingCategory"]]
-        if func:
-            func(self, context)
-        else:
-            raise Exception("No Mapping function")
+            floor_set = set()
 
+            building_category = context["BuildingCategory"]
+
+            for floor, covered_area, usage, occupancy, _, tax in parse_flat_information(context["Floor"]):
+                unit = Unit(floor_no=FLOOR_MAP[floor],
+                            occupancy_type=OC_MAP[occupancy],
+                            unit_area=float(covered_area) / 9)
+
+                if OC_MAP[occupancy] == "RENTED":
+                    unit.arv = float(tax) * (100 / 7.5)
+                floor_set.add(FLOOR_MAP[floor])
+
+                if usage == "Residential":
+                    unit.usage_category_major = "RESIDENTIAL"
+                else:
+                    unit.usage_category_major = "NONRESIDENTIAL"
+
+                    if building_category in BD_UNIT_MAP:
+                        unit.usage_category_minor, unit.usage_category_sub_minor, unit.usage_category_detail = \
+                        BD_UNIT_MAP[building_category]
+                    else:
+                        unit.usage_category_minor = "COMMERCIAL"
+                        unit.usage_category_sub_minor = "OTHERCOMMERCIALSUBMINOR"
+                        unit.usage_category_detail = "OTHERCOMMERCIAL"
+                pd.units.append(unit)
+
+            pd.no_of_floors = len(floor_set)
+
+            if len(pd.units) == 1 and "0" not in floor_set:
+                pd.property_sub_type = "SHAREDPROPERTY"
+                pd.no_of_floors = 2
+                pd.build_up_area = context["PlotArea"]
+            else:
+                pd.property_sub_type = "INDEPENDENTPROPERTY"
+                pd.land_area = context["PlotArea"]
+
+    def process_record(self, context, tenantid, financial_year="2019-20"):
+        # func = BC_MAP[context["BuildingCategory"]]
+        # if func:
+        #     func(self, context)
+        # else:
+        #     raise Exception("No Mapping function")
+
+        self.process_owner_information(context)
         self.process_exemption(context)
-
+        self.process_property_type(context)
+        self.process_address(context)
+        self.property_details[0].financial_year = financial_year
+        self.process_ownershiptype(context)
+        self.process_additional_details(context)
+        self.process_usage(context)
+        self.process_floor_information(context)
+        self.correct_mobile_number(context)
+        self.tenant_id = tenantid
         pass
+
+    def get_property_json(self):
+        property_encoder = PropertyEncoder().encode(self)
+        return convert_json(json.loads(property_encoder), underscore_to_camel)
+
+    def process_property_type(self, context):
+        property_type = context['PropertyType']
+
+        PT_MAP = {
+            "Mix-Use": "MIXED",
+            "Residential": "RESIDENTIAL",
+            "0": "RESIDENTIAL",
+            "Industrial": "NONRESIDENTIAL",
+            "Non-Residential": "NONRESIDENTIAL"
+        }
+
+        self.property_details[0].usage_category_major = PT_MAP[property_type]
+
+    def process_ownershiptype(self, context):
+        pd = self.property_details[0]
+        land_type = context["LandUsedType"]
+
+        ONC_MAP = {
+            "The building and land of Hospitals or Dispensaries owned by the State Government": (
+                "INSTITUTIONALGOVERNMENT", "STATEGOVERNMENT"),
+            "The building and land owned and used by the Corporation": ("INSTITUTIONALPRIVATE", "PRIVATECOMPANY"),
+            "The building and land used for Schools and Colleges owned or aided by the State Government": (
+                "INSTITUTIONALGOVERNMENT", "STATEGOVERNMENT")
+        }
+
+        # INSTITUTIONALPRIVATE, PRIVATECOMPANY
+        # INSTITUTIONALPRIVATE, NGO
+        # INSTITUTIONALPRIVATE, PRIVATETRUST
+        # INSTITUTIONALPRIVATE, PRIVATEBOARD
+        # OTHERSPRIVATEINSTITUITION,
+        #
+        # INSTITUTIONALGOVERNMENT, STATEGOVERNMENT
+        # OTHERGOVERNMENTINSTITUITION
+        # CENTRALGOVERNMENT
+
+        pd.ownership_category = "INDIVIDUAL"
+
+        if len(pd.owners) > 1:
+            pd.sub_ownership_category = "MULTIPLEOWNERS"
+        else:
+            if land_type in ONC_MAP:
+                pd.ownership_category = ONC_MAP[land_type][0]
+                pd.sub_ownership_category = ONC_MAP[land_type][1]
+
+                pd.institution = Institution("UNKNOWN", pd.sub_ownership_category, "UNKNOWN")
+                for o in pd.owners:
+                    o.designation = "Designation"
+                    o.alt_contact_number = "91234567890"
+
+            else:
+                pd.sub_ownership_category = "SINGLEOWNER"
 
     def process_exemption(self, context):
         EC_MAP = {
@@ -259,20 +323,57 @@ class IkonProperty(Property):
         else:
             self.property_details[0].owners[0].owner_type = EC_MAP[ecat]
 
+    def upload_property(self, access_token):
+        request_data = {
+            "RequestInfo": {
+                "authToken": access_token
+            },
+            "Properties": [
+                self.get_property_json()
+            ]
+        }
+        print(json.dumps(request_data, indent=2))
+        response = requests.post(
+            urljoin(config.HOST, "/pt-services-v2/property/_create?tenantId=pb.testing"),
+            json=request_data)
+
+        res = response.json()
+
+        return request_data, res
+
+    def correct_mobile_number(self, context):
+        pd = self.property_details[0]
+
+        pattern = re.compile("[^a-zA-Z0-9 \-'`\.]")
+
+        for owner in pd.owners:
+            if len(owner.mobile_number) != 10 or \
+                    owner.mobile_number == "0000000000" or \
+                    owner.mobile_number == "1111111111" or owner.mobile_number[:1] not in ["6", "7", "8", "9"]:
+                owner.mobile_number = "9999999999"
+            owner.name = pattern.sub("-", owner.name)
+        ci = pd.citizen_info
+
+        if len(ci.mobile_number) != 10 \
+                or ci.mobile_number == "0000000000" \
+                or ci.mobile_number == "1111111111" \
+                or ci.mobile_number[:1] not in ["6", "7", "8", "9"]:
+                ci.mobile_number = "9999999999"
+
 
 class PropertyTaxParser():
     def create_property_object(self, auth_token):
         ri = RequestInfo(auth_token=auth_token)
 
         property = IkonProperty()
-        PropertyCreate(ri, [property])
+        PropertyCreateRequest(ri, [property])
 
 
 owner_pattern = re.compile("(?<![DSNW])/(?![OA])", re.I)
 
 
 def parse_owners_information(text):
-    text = text or """ASHOK KUMAR / ACHHRU RAM / 9779541015JEET KUMARI / W/O ASHOK KUMAR / 9779541015"""
+    # text = text or """ASHOK KUMAR / ACHHRU RAM / 9779541015JEET KUMARI / W/O ASHOK KUMAR / 9779541015"""
 
     info = list(map(str.strip, owner_pattern.split(text, 2)))
     owners = []
@@ -306,7 +407,7 @@ def parse_owners_information(text):
 
 
 def parse_flat_information(text):
-    text = text or """Ground Floor / 1100.00 / Residential / Self Occupied / Pucca / 939.58Ground Floor - Vacant In Use / 250.00 / Residential / Self Occupied / Pucca / 185.421st Floor / 1100.00 / Residential / Self Occupied / Pucca / 613.252nd Floor / 1100.00 / Residential / Self Occupied / Pucca / 368.50"""
+    # text = text or """Ground Floor / 1100.00 / Residential / Self Occupied / Pucca / 939.58Ground Floor - Vacant In Use / 250.00 / Residential / Self Occupied / Pucca / 185.421st Floor / 1100.00 / Residential / Self Occupied / Pucca / 613.252nd Floor / 1100.00 / Residential / Self Occupied / Pucca / 368.50"""
 
     info = list(map(str.strip, owner_pattern.split(text, 5)))
     owners = []
@@ -323,135 +424,26 @@ def parse_flat_information(text):
 
     return owners
 
+if __name__ == "__main__":
+    p = IkonProperty()
 
-data = [
-    {"SrNo": "1", "ReturnId": "43", "AcknowledgementNo": "ACK-131672065564201961", "EntryDate": "03/04/18",
-     "Zone": "JALANDHAR", "Sector": "1", "Colony": "Anand Nagar", "HouseNo": "413",
-     "Owner": "IQBAL JIT SINGH / JASWANT SINGH / 9855002240TEJVINDER SINGH / JASWANT SINGH / 9855002240",
-     "Floor": "Ground Floor / 549.00 / Residential / Self Occupied / Pucca / 183.00Ground Floor - Vacant / 1251.00 / Residential / Self Occupied / Pucca / 209.00",
-     "ResidentialRate": "0", "CommercialRate": "0", "ExemptionCategory": "Non-Exempted", "LandUsedType": "Others",
-     "Usage": "Built Up", "PlotArea": "200", "TotalCoveredArea": "549", "GrossTax": "392", "FireCharges": "0",
-     "InterestAmt": "0", "Penalty": "0", "Rebate": "39", "ExemptionAmt": "0", "TaxAmt": "353", "AmountPaid": "353",
-     "PaymentMode": "Cash", "TransactionID": "", "Bank": "", "G8BookNo": "27514", "G8ReceiptNo": "6",
-     "PaymentDate": "03/04/18", "PropertyType": "Residential", "BuildingCategory": "Residential Houses",
-     "Session": "2018-2019", "Remarks": "", "uuid": "8c2a7418-1d09-4d30-9f09-4a7b8cedef23", "previous_returnid": None,
-     "status": "STAGE1", "tenantid": None, "batchname": None, "new_propertyid": None, "new_locality_code": "JALLC340"},
-    {"SrNo": "2", "ReturnId": "50", "AcknowledgementNo": "ACK-131672073888111979", "EntryDate": "03/04/18",
-     "Zone": "JALANDHAR", "Sector": "1", "Colony": "Janta Colony", "HouseNo": "N/A",
-     "Owner": "MANPREET SINGH AULAKH / RANJIT SINGH AULAKH / 9501501007",
-     "Floor": "Ground Floor / 1620.00 / Residential / Self Occupied / Pucca / 540.00Ground Floor - Vacant / 657.00 / Residential / Self Occupied / Pucca / 110.001st Floor / 1170.00 / Residential / Self Occupied / Pucca / 195.00",
-     "ResidentialRate": "0", "CommercialRate": "0", "ExemptionCategory": "Non-Exempted", "LandUsedType": "Others",
-     "Usage": "Built Up", "PlotArea": "253", "TotalCoveredArea": "2790", "GrossTax": "845", "FireCharges": "0",
-     "InterestAmt": "0", "Penalty": "0", "Rebate": "85", "ExemptionAmt": "0", "TaxAmt": "760", "AmountPaid": "760",
-     "PaymentMode": "Cash", "TransactionID": "", "Bank": "", "G8BookNo": "27514", "G8ReceiptNo": "9",
-     "PaymentDate": "03/04/18", "PropertyType": "Residential", "BuildingCategory": "Residential Houses",
-     "Session": "2018-2019", "Remarks": "", "uuid": "8aeb2b94-b6fd-4dfb-ad88-10929740e9fa", "previous_returnid": None,
-     "status": "STAGE1", "tenantid": None, "batchname": None, "new_propertyid": None, "new_locality_code": "JALLC566"},
-    {"SrNo": "4", "ReturnId": "156", "AcknowledgementNo": "ACK-131672891544719647", "EntryDate": "04/04/18",
-     "Zone": "JALANDHAR", "Sector": "1", "Colony": "Friends Colony", "HouseNo": "6:00 AM",
-     "Owner": "S.L AGNISH/SHANTA SHARMA / KHUSHI RAM / 9876266781",
-     "Floor": "Ground Floor / 1449.00 / Residential / Self Occupied / Pucca / 805.001st Floor / 1449.00 / Residential / Self Occupied / Pucca / 403.00",
-     "ResidentialRate": "0", "CommercialRate": "0", "ExemptionCategory": "Non-Exempted", "LandUsedType": "Others",
-     "Usage": "Built Up", "PlotArea": "161", "TotalCoveredArea": "2898", "GrossTax": "1208", "FireCharges": "0",
-     "InterestAmt": "0", "Penalty": "0", "Rebate": "121", "ExemptionAmt": "0", "TaxAmt": "1087", "AmountPaid": "1087",
-     "PaymentMode": "Cash", "TransactionID": "", "Bank": "", "G8BookNo": "27515", "G8ReceiptNo": "24",
-     "PaymentDate": "04/04/18", "PropertyType": "Residential", "BuildingCategory": "Residential Houses",
-     "Session": "2018-2019", "Remarks": "", "uuid": "7f40c849-1f3f-493c-934b-de9c9d7f2ddb", "previous_returnid": None,
-     "status": "STAGE1", "tenantid": None, "batchname": None, "new_propertyid": None, "new_locality_code": "JALLC140"},
-    {"SrNo": "5", "ReturnId": "158", "AcknowledgementNo": "ACK-131672891840779817", "EntryDate": "04/04/18",
-     "Zone": "JALANDHAR", "Sector": "1", "Colony": "Friends Colony", "HouseNo": "1",
-     "Owner": "SARITA / SOM DATT SHARMA / 9814814775",
-     "Floor": "Ground Floor / 1656.00 / Residential / Self Occupied / Pucca / 920.001st Floor / 1656.00 / Residential / Self Occupied / Pucca / 460.00",
-     "ResidentialRate": "0", "CommercialRate": "0", "ExemptionCategory": "Non-Exempted", "LandUsedType": "Others",
-     "Usage": "Built Up", "PlotArea": "184", "TotalCoveredArea": "3312", "GrossTax": "1380", "FireCharges": "0",
-     "InterestAmt": "0", "Penalty": "0", "Rebate": "138", "ExemptionAmt": "0", "TaxAmt": "1242", "AmountPaid": "1242",
-     "PaymentMode": "Cash", "TransactionID": "", "Bank": "", "G8BookNo": "27515", "G8ReceiptNo": "25",
-     "PaymentDate": "04/04/18", "PropertyType": "Residential", "BuildingCategory": "Residential Houses",
-     "Session": "2018-2019", "Remarks": "", "uuid": "6e01e309-1e14-4d5e-91bb-26c5ac7e02d1", "previous_returnid": None,
-     "status": "STAGE1", "tenantid": None, "batchname": None, "new_propertyid": None, "new_locality_code": "JALLC140"},
-    {"SrNo": "7", "ReturnId": "415", "AcknowledgementNo": "ACK-131673854451010127", "EntryDate": "05/04/18",
-     "Zone": "JALANDHAR", "Sector": "1", "Colony": "Angad Nagar", "HouseNo": "128",
-     "Owner": "HARBHAJAN SINGH / THAKUR SINGH / 9915664430",
-     "Floor": "Ground Floor / 1800.00 / Residential / Self Occupied / Pucca / 600.001st Floor / 1800.00 / Residential / Self Occupied / Pucca / 300.00",
-     "ResidentialRate": "0", "CommercialRate": "0", "ExemptionCategory": "Non-Exempted", "LandUsedType": "Others",
-     "Usage": "Built Up", "PlotArea": "200", "TotalCoveredArea": "3600", "GrossTax": "900", "FireCharges": "0",
-     "InterestAmt": "0", "Penalty": "0", "Rebate": "90", "ExemptionAmt": "0", "TaxAmt": "810", "AmountPaid": "810",
-     "PaymentMode": "Cash", "TransactionID": "", "Bank": "", "G8BookNo": "27518", "G8ReceiptNo": "34",
-     "PaymentDate": "05/04/18", "PropertyType": "Residential", "BuildingCategory": "Residential Houses",
-     "Session": "2018-2019", "Remarks": "", "uuid": "9a0c67f2-9b2a-4181-9c77-aebd4762e240", "previous_returnid": None,
-     "status": "STAGE1", "tenantid": None, "batchname": None, "new_propertyid": None, "new_locality_code": "JALLC341"},
-    {"SrNo": "8", "ReturnId": "451", "AcknowledgementNo": "ACK-131674001043180235", "EntryDate": "05/04/18",
-     "Zone": "JALANDHAR", "Sector": "1", "Colony": "Anand Nagar", "HouseNo": "B-1/373",
-     "Owner": "SURJEET KAUR / HARJEET SINGH / 9872093750",
-     "Floor": "Ground Floor / 2106.00 / Residential / Self Occupied / Pucca / 702.00Ground Floor - Vacant / 2097.00 / Residential / Self Occupied / Pucca / 350.00",
-     "ResidentialRate": "0", "CommercialRate": "0", "ExemptionCategory": "Non-Exempted", "LandUsedType": "Others",
-     "Usage": "Built Up", "PlotArea": "467", "TotalCoveredArea": "2106", "GrossTax": "1052", "FireCharges": "0",
-     "InterestAmt": "0", "Penalty": "0", "Rebate": "105", "ExemptionAmt": "0", "TaxAmt": "947", "AmountPaid": "947",
-     "PaymentMode": "Online", "TransactionID": "2018TXN000451", "Bank": "", "G8BookNo": "27634", "G8ReceiptNo": "40",
-     "PaymentDate": "05/04/18", "PropertyType": "Residential", "BuildingCategory": "Residential Houses",
-     "Session": "2018-2019", "Remarks": "NO", "uuid": "d5098977-cc5d-4054-89ec-3d44ab453ca4", "previous_returnid": None,
-     "status": "STAGE1", "tenantid": None, "batchname": None, "new_propertyid": None, "new_locality_code": "JALLC340"},
-    {"SrNo": "10", "ReturnId": "482", "AcknowledgementNo": "ACK-131674637511723224", "EntryDate": "06/04/18",
-     "Zone": "JALANDHAR", "Sector": "1", "Colony": "New Anand Nagar", "HouseNo": "119",
-     "Owner": "RAGHBIR SINGH / PURAN SINGH / 9815017680",
-     "Floor": "Ground Floor / 1800.00 / Residential / Self Occupied / Pucca / 600.00Ground Floor - Vacant / 270.00 / Residential / Self Occupied / Pucca / 45.001st Floor / 1600.00 / Residential / Self Occupied / Pucca / 267.00",
-     "ResidentialRate": "0", "CommercialRate": "0", "ExemptionCategory": "Non-Exempted", "LandUsedType": "Others",
-     "Usage": "Built Up", "PlotArea": "230", "TotalCoveredArea": "3400", "GrossTax": "912", "FireCharges": "0",
-     "InterestAmt": "0", "Penalty": "0", "Rebate": "91", "ExemptionAmt": "0", "TaxAmt": "821", "AmountPaid": "821",
-     "PaymentMode": "Cash", "TransactionID": "", "Bank": "", "G8BookNo": "26867", "G8ReceiptNo": "17",
-     "PaymentDate": "06/04/18", "PropertyType": "Residential", "BuildingCategory": "Residential Houses",
-     "Session": "2018-2019", "Remarks": "", "uuid": "17c2482c-5ea8-4287-bcad-16221f948a20", "previous_returnid": None,
-     "status": "STAGE1", "tenantid": None, "batchname": None, "new_propertyid": None, "new_locality_code": "JALLC683"},
-    {"SrNo": "11", "ReturnId": "483", "AcknowledgementNo": "ACK-131674637943483282", "EntryDate": "06/04/18",
-     "Zone": "JALANDHAR", "Sector": "1", "Colony": "Anand Nagar", "HouseNo": "B-1-329",
-     "Owner": "AJIT SINGH / SANTA SINGH / 8427272123KULBIR SINGH / SWARAN SINGH / 8427272123",
-     "Floor": "Ground Floor / 1500.00 / Residential / Self Occupied / Pucca / 500.00Ground Floor - Vacant / 300.00 / Residential / Self Occupied / Pucca / 50.001st Floor / 1200.00 / Residential / Self Occupied / Pucca / 200.00",
-     "ResidentialRate": "0", "CommercialRate": "0", "ExemptionCategory": "Non-Exempted", "LandUsedType": "Others",
-     "Usage": "Built Up", "PlotArea": "200", "TotalCoveredArea": "2700", "GrossTax": "750", "FireCharges": "0",
-     "InterestAmt": "0", "Penalty": "0", "Rebate": "75", "ExemptionAmt": "0", "TaxAmt": "675", "AmountPaid": "675",
-     "PaymentMode": "Cash", "TransactionID": "", "Bank": "", "G8BookNo": "26867", "G8ReceiptNo": "18",
-     "PaymentDate": "06/04/18", "PropertyType": "Residential", "BuildingCategory": "Residential Houses",
-     "Session": "2018-2019", "Remarks": "", "uuid": "da71840a-4213-401f-8eeb-e0b75e009236", "previous_returnid": None,
-     "status": "STAGE1", "tenantid": None, "batchname": None, "new_propertyid": None, "new_locality_code": "JALLC340"},
-    {"SrNo": "12", "ReturnId": "575", "AcknowledgementNo": "ACK-131675516782322293", "EntryDate": "07/04/18",
-     "Zone": "JALANDHAR", "Sector": "1", "Colony": "Anand Nagar", "HouseNo": "46/2",
-     "Owner": "HARJIT SINGH / GIAN SINGH / 9872093750",
-     "Floor": "Ground Floor / 702.00 / Residential / Self Occupied / Pucca / 234.00Ground Floor - Vacant / 1701.00 / Residential / Self Occupied / Pucca / 284.001st Floor / 702.00 / Residential / Self Occupied / Pucca / 117.00",
-     "ResidentialRate": "0", "CommercialRate": "0", "ExemptionCategory": "Non-Exempted", "LandUsedType": "Others",
-     "Usage": "Built Up", "PlotArea": "267", "TotalCoveredArea": "1404", "GrossTax": "635", "FireCharges": "0",
-     "InterestAmt": "0", "Penalty": "0", "Rebate": "64", "ExemptionAmt": "0", "TaxAmt": "571", "AmountPaid": "571",
-     "PaymentMode": "Online", "TransactionID": "2018TXN000575", "Bank": "", "G8BookNo": "27635", "G8ReceiptNo": "10",
-     "PaymentDate": "07/04/18", "PropertyType": "Residential", "BuildingCategory": "Residential Houses",
-     "Session": "2018-2019", "Remarks": "no", "uuid": "23fdbf04-4828-4764-b59a-b39314bc4bbe", "previous_returnid": None,
-     "status": "STAGE1", "tenantid": None, "batchname": None, "new_propertyid": None, "new_locality_code": "JALLC340"},
-    {"SrNo": "13", "ReturnId": "619", "AcknowledgementNo": "ACK-131677225074654318", "EntryDate": "09/04/18",
-     "Zone": "JALANDHAR", "Sector": "1", "Colony": "Greater Kailash Nagar", "HouseNo": "556-57",
-     "Owner": "MOHINDER PAL SINGH / BELWANT SINGH / 9815904950",
-     "Floor": "Ground Floor / 3150.00 / Residential / Self Occupied / Pucca / 1750.001st Floor / 1494.00 / Residential / Self Occupied / Pucca / 415.00",
-     "ResidentialRate": "0", "CommercialRate": "0", "ExemptionCategory": "Non-Exempted", "LandUsedType": "Others",
-     "Usage": "Built Up", "PlotArea": "350", "TotalCoveredArea": "4644", "GrossTax": "2165", "FireCharges": "0",
-     "InterestAmt": "0", "Penalty": "0", "Rebate": "217", "ExemptionAmt": "0", "TaxAmt": "1948", "AmountPaid": "1948",
-     "PaymentMode": "Cash", "TransactionID": "", "Bank": "", "G8BookNo": "26867", "G8ReceiptNo": "31",
-     "PaymentDate": "09/04/18", "PropertyType": "Residential", "BuildingCategory": "Residential Houses",
-     "Session": "2018-2019", "Remarks": "", "uuid": "76026ed2-a4cf-40a8-8b92-fc788142fe25", "previous_returnid": None,
-     "status": "STAGE1", "tenantid": None, "batchname": None, "new_propertyid": None, "new_locality_code": "JALLC149"}
-]
-# print(parse_owners_information(""))
-# data = [
-# "EXPORT CREDITGUARANTEE CORPORATION OF INDIA LTD. / N.A. / N/A",
-# ]
+    from uploader import PropertyTaxData
 
-udata = set()
-count = 0
+    start = 0
+    end = 1
 
-from csv import writer
+    access_token = superuser_login()["access_token"]
+    ri = RequestInfo(auth_token=access_token)
+    pc = PropertyCreateRequest(request_info=ri, properties=[None])
 
-converters = {
-    ""
-}
+    for d in PropertyTaxData.data[start:]:
+        start = start + 1
+        print(start)
+        p.process_record(d, "pb.testing")
 
-p = IkonProperty()
-p.process_record(data[0])
+        req, res = p.upload_property()
+
+        break
 
 # print(json.dumps(data[0], indent=2))
 # dfs = read_html("/Users/tarunlalwani/Downloads/PTAX data 2017-18/2.xls")
