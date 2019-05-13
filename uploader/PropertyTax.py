@@ -13,7 +13,7 @@ class Locality:
     code: Optional[str]
     area: Optional[str]
 
-    def __init__(self, code: Optional[str]= None, area: Optional[str]= None) -> None:
+    def __init__(self, code: Optional[str] = None, area: Optional[str] = None) -> None:
         self.code = code
         self.area = area
 
@@ -26,7 +26,9 @@ class Address:
     locality: Optional[Locality]
     pincode: Optional[int]
 
-    def __init__(self, city: Optional[str]= None, door_no: Optional[str]= None, building_name: Optional[str]= None, street: Optional[str]= None, locality: Optional[Locality]= None, pincode: Optional[int]= None) -> None:
+    def __init__(self, city: Optional[str] = None, door_no: Optional[str] = None, building_name: Optional[str] = None,
+                 street: Optional[str] = None, locality: Optional[Locality] = None,
+                 pincode: Optional[int] = None) -> None:
         self.city = city
         self.door_no = door_no
         self.building_name = building_name
@@ -48,7 +50,7 @@ class CitizenInfo:
     mobile_number: Optional[str]
     name: Optional[str]
 
-    def __init__(self, mobile_number: Optional[str]= None, name: Optional[str]= None) -> None:
+    def __init__(self, mobile_number: Optional[str] = None, name: Optional[str] = None) -> None:
         self.mobile_number = mobile_number
         self.name = name
 
@@ -57,7 +59,7 @@ class Document:
     document_uid: None
     document_type: None
 
-    def __init__(self, document_uid: None= None, document_type: None= None) -> None:
+    def __init__(self, document_uid: None = None, document_type: None = None) -> None:
         self.document_uid = document_uid
         self.document_type = document_type
 
@@ -72,8 +74,17 @@ class Owner:
     relationship: Optional[str]
     owner_type: Optional[str]
     gender: Optional[str]
+    designation: Optional[str]
+    alt_contact_number: Optional[str]
 
-    def __init__(self, documents: Optional[List[Document]]= None, name: Optional[str]= None, mobile_number: Optional[str]= None, father_or_husband_name: Optional[str]= None, email_id: Optional[str]= None, permanent_address: Optional[str]= None, relationship: Optional[str]= None, owner_type: Optional[str]= None, gender: Optional[str]= None) -> None:
+    def __init__(self, documents: Optional[List[Document]] = None, name: Optional[str] = None,
+                 mobile_number: Optional[str] = None, father_or_husband_name: Optional[str] = None,
+                 email_id: Optional[str] = None, permanent_address: Optional[str] = None,
+                 relationship: Optional[str] = None, owner_type: Optional[str] = None,
+                 gender: Optional[str] = None,
+                 designation: Optional[str] = None,
+                 alt_contact_number: Optional[str] = None
+                 ) -> None:
         self.documents = documents
         self.name = name
         self.mobile_number = mobile_number
@@ -83,21 +94,48 @@ class Owner:
         self.relationship = relationship
         self.owner_type = owner_type
         self.gender = gender
-
+        self.designation = designation
+        self.alt_contact_number = alt_contact_number
 
 class Unit:
     usage_category_major: Optional[str]
+    usage_category_minor: Optional[str]
+    usage_category_detail: Optional[str]
+    usage_category_sub_minor: Optional[str]
+
     occupancy_type: Optional[str]
     unit_area: Optional[int]
     floor_no: Optional[int]
     arv: Optional[float]
 
-    def __init__(self, usage_category_major: Optional[str]= None, occupancy_type: Optional[str]= None, unit_area: Optional[int]= None, floor_no: Optional[str] = None, arv: Optional[float] = None) -> None:
+    def __init__(self, usage_category_major: Optional[str] = None,
+                 usage_category_minor: Optional[str] = None,
+                 usage_category_detail: Optional[str] = None,
+                 usage_category_sub_minor: Optional[str] = None,
+                 occupancy_type: Optional[str] = None,
+                 unit_area: Optional[int] = None,
+                 floor_no: Optional[str] = None,
+                 arv: Optional[float] = None) -> None:
         self.usage_category_major = usage_category_major
         self.occupancy_type = occupancy_type
         self.unit_area = unit_area
         self.floor_no = floor_no
         self.arv = arv
+        self.usage_category_minor = usage_category_minor
+        self.usage_category_detail = usage_category_detail
+        self.usage_category_sub_minor = usage_category_sub_minor
+
+
+class Institution:
+    name: Optional[str]
+    type: Optional[str]
+    designation: Optional[str]
+
+    def __init__(self, name: Optional[str] = None, type: Optional[str] = None,
+                 designation: Optional[str] = None) -> None:
+        self.name = name
+        self.type = type
+        self.designation = designation
 
 
 class PropertyDetail:
@@ -114,9 +152,18 @@ class PropertyDetail:
     owners: Optional[List[Owner]]
     financial_year: Optional[str]
     citizen_info: Optional[CitizenInfo]
+    institution: Optional[Institution]
     additional_details: Optional[PropertyDetailAdditionalDetails]
 
-    def __init__(self, usage_category_minor: Optional[str] = None, units: Optional[List[Unit]] = None, usage_category_major: Optional[str] = None, property_sub_type: Optional[str]= None, land_area: Optional[float] = None, build_up_area: Optional[float] = None, property_type: Optional[str]= None, no_of_floors: Optional[int]= None, sub_ownership_category: Optional[str]= None, ownership_category: Optional[str]= None, owners: Optional[List[Owner]]= None, financial_year: Optional[str]= None, citizen_info: Optional[CitizenInfo]= None, additional_details: Optional[PropertyDetailAdditionalDetails]= None) -> None:
+    def __init__(self, usage_category_minor: Optional[str] = None, units: Optional[List[Unit]] = None,
+                 usage_category_major: Optional[str] = None, property_sub_type: Optional[str] = None,
+                 land_area: Optional[float] = None, build_up_area: Optional[float] = None,
+                 property_type: Optional[str] = None, no_of_floors: Optional[int] = None,
+                 sub_ownership_category: Optional[str] = None, ownership_category: Optional[str] = None,
+                 owners: Optional[List[Owner]] = None, financial_year: Optional[str] = None,
+                 citizen_info: Optional[CitizenInfo] = None,
+                 institution: Optional[Institution] = None,
+                 additional_details: Optional[PropertyDetailAdditionalDetails] = None) -> None:
         self.usage_category_minor = usage_category_minor
         self.units = units
         self.usage_category_major = usage_category_major
@@ -140,7 +187,9 @@ class Property:
     property_details: Optional[List[PropertyDetail]]
     additional_details: Optional[PropertyAdditionalDetails]
 
-    def __init__(self, tenant_id: Optional[str] = None, address: Optional[Address] = None, old_property_id: Optional[str] = None, property_details: Optional[List[PropertyDetail]] = None, additional_details: Optional[PropertyAdditionalDetails] = None) -> None:
+    def __init__(self, tenant_id: Optional[str] = None, address: Optional[Address] = None,
+                 old_property_id: Optional[str] = None, property_details: Optional[List[PropertyDetail]] = None,
+                 additional_details: Optional[PropertyAdditionalDetails] = None) -> None:
         self.tenant_id = tenant_id
         self.address = address
         self.old_property_id = old_property_id
@@ -158,7 +207,9 @@ class RequestInfo:
     msg_id: Optional[str]
     auth_token: Optional[UUID]
 
-    def __init__(self, api_id: Optional[str] = None, ver: Optional[str]= None, ts: Optional[str]= None, action: Optional[str]= None, did: Optional[int]= None, key: Optional[str]= None, msg_id: Optional[str]= None, auth_token: Optional[UUID]= None) -> None:
+    def __init__(self, api_id: Optional[str] = None, ver: Optional[str] = None, ts: Optional[str] = None,
+                 action: Optional[str] = None, did: Optional[int] = None, key: Optional[str] = None,
+                 msg_id: Optional[str] = None, auth_token: Optional[UUID] = None) -> None:
         self.api_id = api_id
         self.ver = ver
         self.ts = ts
@@ -169,10 +220,10 @@ class RequestInfo:
         self.auth_token = auth_token
 
 
-class PropertyCreate:
+class PropertyCreateRequest:
     request_info: Optional[RequestInfo]
     properties: Optional[List[Property]]
 
-    def __init__(self, request_info: Optional[RequestInfo] = None, properties: Optional[List[Property]] = None)  -> None:
+    def __init__(self, request_info: Optional[RequestInfo] = None, properties: Optional[List[Property]] = None) -> None:
         self.request_info = request_info
         self.properties = properties
