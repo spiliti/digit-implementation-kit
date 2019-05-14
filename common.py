@@ -150,6 +150,61 @@ def get_slab_template():
     }
 
 
+def validate_boundary_data(auth_token, boundary_data, boundary_type, duplicate_check=True,
+                           used_boundary_codes_check=True):
+    tenant_boundary = {}
+    errors = []
+
+    for tenantboundary in boundary_data["TenantBoundary"]:
+        if tenantboundary["hierarchyType"]["code"] == boundary_type:
+            tenant_boundary = tenantboundary["boundary"]
+            break
+
+    if not tenant_boundary:
+        return errors
+
+    locality_map = {}
+    for zone in tenant_boundary["children"]:
+        for wardOrBlock in zone["children"]:
+            for locality in wardOrBlock["children"]:
+                locality_map[locality["code"]] = locality_map.get(locality["code"], 0) + 1
+
+    if duplicate_check:
+        for locality_code, count in locality_map.items():
+            if count > 1:
+                errors.append("Duplicate Locality Code \"{}\" Repeated for \"{}\" times".format(locality_code, count))
+
+    if used_boundary_codes_check:
+        if boundary_type == "REVENUE":
+            URL = config.URL_SEARCH_LOCALITIES_USED_IN_REVENUE
+        elif boundary_type == "ADMIN":
+            URL = config.URL_SEARCH_LOCALITIES_USED_IN_ADMIN
+
+        tenant_id = boundary_data["tenantId"]
+
+        resp = requests.post(URL, data=json.dumps({
+            "RequestInfo": {
+                "authToken": auth_token
+            },
+            "searchCriteria": {
+                "tenantId": tenant_id
+            }
+        }), headers={'Content-Type': 'application/json'})
+
+        localities_used = resp.json()["services"]
+        localities_in_use = []
+        for locality in localities_used:
+            localities_in_use.append(locality["locality"])
+
+        missing_boundary_codes = list(set(localities_in_use) - set(locality_map.keys()))
+        for locality in missing_boundary_codes:
+            errors.append(
+                "Boundary code \"{}\" is used by existing properties and not present in current boundary".format(
+                    locality))
+
+    return errors
+
+
 def create_boundary(config_function, boundary_type):
     # load_admin_boundary_config()
     current_boundary_type = boundary_type
@@ -298,8 +353,16 @@ def create_boundary(config_function, boundary_type):
     data = json.dumps(final_data, indent=2)
 
     print(data)
-    import os
 
+    auth_token = superuser_login()["access_token"]
+    errors = validate_boundary_data(auth_token, final_data, boundary_type, config.BOUNDARY_DUPLICATE_CHECK,
+                                    config.BOUNDARY_USED_CHECK)
+    if len(errors) > 0:
+        for error in errors:
+            print(error)
+        return
+
+    import os
     response = os.getenv("ASSUME_YES", None) or input("Do you want to append the data in repo (y/[n])?")
 
     if response.lower() == "y":
@@ -524,4 +587,3 @@ def upsert_localization(auth_token, body):
     body["RequestInfo"]["authToken"] = auth_token
     data = requests.post(url=config.HOST + '/localization/messages/v1/_upsert', json=body)
     return data.json()
-

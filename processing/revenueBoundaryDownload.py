@@ -1,6 +1,6 @@
 import json
 
-import requests
+import os
 import xlwt
 from xlwt import Worksheet
 from config import config
@@ -10,7 +10,12 @@ def download_boundary(tenant, boundary_type):
     # url = "https://raw.githubusercontent.com/egovernments/punjab-mdms-data/master/data/{}/egov-location/boundary-data.json".replace(
     #     "{}", tenant.replace(".", "/"))
 
-    boundary_path = config.MDMS_LOCATION / config.CITY_NAME.lower() / "egov-location" / "boundary-data.json"
+    boundary_path = config.MDMS_LOCATION / tenant.split(".")[-1] / "egov-location" / "boundary-data.json"
+
+    if not os.path.isfile(boundary_path):
+        print(boundary_path)
+        print("No boundary data exists for tenantId \"{}\", not downloading".format(tenant.upper()))
+        return
 
     wk = xlwt.Workbook()
     zone: Worksheet = wk.add_sheet("Revenue Zone")
@@ -36,8 +41,10 @@ def download_boundary(tenant, boundary_type):
 
     if boundary[0]["hierarchyType"]["code"] == boundary_type:
         boundary_data = boundary[0]["boundary"]
-    else:
+    elif len(boundary) > 1:
         boundary_data = boundary[1]["boundary"]
+    else:
+        return
 
     row_zone = 1
     row_ward = 1
@@ -68,10 +75,15 @@ def download_boundary(tenant, boundary_type):
                 locality.write(row_locality, 3, l2['code'])
                 locality.write(row_locality, 4, value['area'])
                 row_locality += 1
-                print(value['name'] + "," + value['code'])
-
-    wk.save(tenant + "_rev_boundary.xls")
+                # print(value['name'] + "," + value['code'])
+    file_name = tenant + "_rev_boundary.xls"
+    dir_name = "boundary_download/"
+    wk.save(dir_name+file_name)
+    print("\n", "XLSX file created with file name : {}".format(tenant) + "_rev_boundary.xls")
 
 
 if __name__ == "__main__":
     download_boundary(config.TENANT_ID, "REVENUE")
+
+
+
