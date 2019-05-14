@@ -1,4 +1,5 @@
 import math
+import time
 from math import isnan
 
 import numpy
@@ -35,7 +36,7 @@ def get_slab_object(row_data):
         "rate": remove_nan(row_data["rate"], default=0.0)
     }
 
-    if "id" in row_data and row_data["id"] is not None and not math.isnan(row_data["id"]) and len(row_data["id"]) > 6:
+    if "id" in row_data and type(row_data['id']) is str and len(row_data["id"]) > 6:
         data["id"] = row_data["id"]
 
     return data
@@ -65,11 +66,18 @@ def get_slab_id(slab):
 
 
 tenants = [
-    "pb.nabha"
+    "pb.moga"
 ]
+
+import os
 
 for tenant in tenants:
     print(tenant)
+    response = os.getenv("ASSUME_YES", None) or input(
+        "Your ENV is \"{}\" , You want to proceed (y/[n])?".format(config.CONFIG_ENV))
+    if response.lower() == "n":
+        os._exit(0)
+
     config.CITY_NAME = tenant.replace(" ", "").replace("pb.", "")
     load_config()
 
@@ -87,7 +95,8 @@ for tenant in tenants:
 
     # print(json.dumps(existing_slab_data, indent=2))
     source_file = config.BASE_PPATH / "source" / "{}.xlsx".format(tenant_id)
-    create_trade_n_accessory_data(tenant_id,source_file,destination_path=config.BASE_PPATH / "source")
+    create_trade_n_accessory_data(tenant_id, source_file, destination_path=config.BASE_PPATH / "source",
+                                  template_file_path="source/template.xlsx")
 
     dfs = open_excel_file(config.BASE_PPATH / "source" / "{}.processed.xls".format(tenant_id))
     data = get_sheet(dfs, tenant_id)
@@ -155,7 +164,7 @@ for tenant in tenants:
 
     if update_slabs_data:
         print("Updating changed billing slabs")
-        # print(json.dumps(update_slabs_data, indent=2))
+        print(json.dumps(update_slabs_data, indent=2))
         res = requests.post(config.HOST + "/tl-calculator/billingslab/_update?tenantId={}".format(tenant_id), json={
             "RequestInfo": {
                 "authToken": auth_token

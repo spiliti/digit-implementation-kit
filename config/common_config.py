@@ -76,6 +76,12 @@ def load_config():
     config.URL_LOGIN = config.HOST + "/user/oauth/token"
     config.URL_BILLING_SLAB_CREATE = config.HOST + "/pt-calculator-v2/billingslab/_create"
 
+    config.URL_SEARCH_LOCALITIES_USED_IN_REVENUE = config.HOST + "/egov-searcher/rainmaker-pt-customsearch-punjab/searchLocalitiesUsedInRevenue/_get"
+    config.URL_SEARCH_LOCALITIES_USED_IN_ADMIN = config.HOST + "/egov-searcher/rainmaker-pt-customsearch-punjab/searchLocalitiesUsedInAdmin/_get"
+
+    config.BOUNDARY_DUPLICATE_CHECK = True
+    config.BOUNDARY_USED_CHECK = True
+
     config.MDMS_DEPARTMENT_JSON = config.MDMS_LOCATION / "common-masters" / "Department.json"
     config.MDMS_DESIGNATION_JSON = config.MDMS_LOCATION / "common-masters" / "Designation.json"
 
