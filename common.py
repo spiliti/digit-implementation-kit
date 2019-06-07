@@ -536,6 +536,83 @@ def search_property(auth_token, tenant_id, property_id):
     return data.json()
 
 
+def update_property(auth_token, tenant_id, property):
+    data = requests.post(url=config.HOST + '/pt-services-v2/property/_update',
+                         json={
+                             "RequestInfo": {
+                                 "authToken": auth_token
+                             },
+                             "Properties": property
+                         }, params={"tenantId": tenant_id})
+
+    return data.json()
+
+
+def search_demand(auth_token, tenantId=None, consumerCode=None, businessService=None):
+    args = {}
+
+    if tenantId:
+        args["tenantId"] = tenantId
+
+    if consumerCode:
+        args["consumerCode"] = consumerCode
+
+    if businessService:
+        args["businessCode"] = businessService
+
+    data = requests.post(url=config.HOST + '/billing-service/demand/_search',
+                         json={
+                             "RequestInfo": {
+                                 "authToken": auth_token
+                             }
+                         }, params=args)
+
+    return data.json()
+
+
+def update_demand(auth_token, demands):
+    data = requests.post(url=config.HOST + '/billing-service/demand/_update',
+                         json={
+                             "RequestInfo": {
+                                 "authToken": auth_token
+                             },
+                             "Demands": demands
+                         })
+
+    return data.json()
+
+
+def generate_bill(auth_token, tenant_id, demand_id, consumer_code, business_service):
+    data = requests.post(url=config.HOST + '/billing-service/bill/_generate',
+                         json={
+                             "RequestInfo": {
+                                 "authToken": auth_token
+                             },
+                             "GenerateBillCriteria": [
+
+                             ]
+                         }, params={
+                                     "tenantId": tenant_id,
+                                     "demandId": demand_id,
+                                     "consumerCode": consumer_code,
+                                     "businessService": business_service,
+                                 })
+
+    return data.json()
+
+
+def create_receipt(auth_token, tenant_id, receipt):
+    data = requests.post(url=config.HOST + '/collection-services/receipts/_create',
+                         json={
+                             "RequestInfo": {
+                                 "authToken": auth_token
+                             },
+                             "Receipt": receipt
+                         }, params={"tenantId": tenant_id})
+
+    return data.json()
+
+
 def search_receipt(auth_token, receiptNumbers=None, tenantId=None, consumerCode=None, businessCode=None, status=None):
     args = {}
 

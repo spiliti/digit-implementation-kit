@@ -20,7 +20,7 @@ auth_token = superuser_login()["access_token"]
 
 
 def process_master(module, master, path, outputpath, locale_module, code="code", name="name", process_dot=False,
-                   tenantid=None, prefix=None):
+                   tenantid=None, prefix=None, name_is_blank=False, upload_localizations=True):
     if prefix is None:
         prefix = module + "_" + master
 
@@ -44,15 +44,22 @@ def process_master(module, master, path, outputpath, locale_module, code="code",
         if code in r and name not in r and ("TL_" + r[code]) in existing_locale:
             r[name] = existing_locale["TL_" + r[code]]
 
-        if code not in r or name not in r:
+        if code not in r:
             raise Exception("{} or {} is not available in data".format(code, name))
+
+        if name not in r:
+            if not name_is_blank:
+                raise Exception("{} or {} is not available in data".format(code, name))
+            else:
+                r[name] = ""
+
 
         if process_dot:
             new_code = r[code].split(".")[0]
             if new_code not in process_dots:
                 locale_data.append({
                     "code": get_code(prefix, new_code),
-                    "message": existing_locale["TL_" + new_code],
+                    "message": existing_locale.get("TL_" + new_code, ""),
                     "module": locale_module,
                     "locale": "en_IN"
                 })
@@ -63,7 +70,7 @@ def process_master(module, master, path, outputpath, locale_module, code="code",
                 if new_code not in process_dots:
                     locale_data.append({
                         "code": get_code(prefix, new_code),
-                        "message": existing_locale["TL_" + new_code],
+                        "message": existing_locale.get("TL_" + new_code, ""),
                         "module": locale_module,
                         "locale": "en_IN"
                     })
@@ -81,6 +88,7 @@ def process_master(module, master, path, outputpath, locale_module, code="code",
             })
         else:
             print("Code has been duplicated {} - {}".format(r["code"], r[name]))
+
     with io.open(outputpath, mode="w") as f:
         data = {
             "RequestInfo": {
@@ -92,7 +100,8 @@ def process_master(module, master, path, outputpath, locale_module, code="code",
         json.dump(
             data, indent=2, fp=f)
 
-        print(upsert_localization(auth_token, data))
+        if upload_localizations:
+            print(upsert_localization(auth_token, data))
 
 
 def process_boundary_file(auth_token, boundary_path, generate_file=True, write_localization=True):
@@ -231,4 +240,24 @@ if __name__ == "__main__":
     #                None,
     #                None, "rainmaker-pt", prefix="PropertyTax_Billing_Slab")
 
-    process_boundary(auth_token=auth_token)
+    # process_boundary(auth_token=auth_token)
+
+    # process_master("firenoc", "ApplicationType",
+    #                None,
+    #                None, "rainmaker-noc", name_is_blank=True, upload_localizations=False)
+    #
+    # process_master("firenoc", "BuildingType",
+    #                None,
+    #                None, "rainmaker-noc", name_is_blank=True, upload_localizations=False, process_dot=True)
+    #
+    # process_master("firenoc", "PropertyType",
+    #                None,
+    #                None, "rainmaker-noc", name_is_blank=True, upload_localizations=False)
+
+    # process_master("BillingService", "BusinessService",
+    #                None,
+    #                None, "rainmaker-uc", name_is_blank=True, upload_localizations=False,process_dot=True)
+
+    process_master("BillingService", "TaxHeadMaster",
+                   None,
+                   None, "rainmaker-uc", name_is_blank=True, upload_localizations=False,process_dot=False)

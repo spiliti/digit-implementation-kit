@@ -15,11 +15,15 @@ FLOOR_MAP = {
     "Other Floor": "0",
     "Lower Ground Floor": "-1",
     "Ground Floor - Vacant": "0",
+    "Ground Floor - Vacant - Vacant": "0",
     "Ground Floor - Vacant In Use": "0",
     "Ground Floor": "0",
     "Basement 2": "-2",
     "Basement 1": "-1",
     "Basement 3": "-3",
+    "16th Floor": "16",
+    "15th Floor": "15",
+    "14th Floor": "14",
     "13th Floor": "13",
     "12th Floor": "12",
     "11th Floor": "11",
@@ -27,6 +31,7 @@ FLOOR_MAP = {
     "9th Floor": "9",
     "8th Floor": "8",
     "7th Floor": "7",
+    "6th Floor": "6",
     "5th Floor": "5",
     "4th Floor": "4",
     "3rd Floor": "3",
@@ -151,6 +156,10 @@ class IkonProperty(Property):
         locality = Locality(code=context["new_locality_code"])
         self.address = Address(city="Jalandhar", door_no=context["HouseNo"], locality=locality)
 
+        if len(self.address.door_no) > 64:
+            self.address.door_no = self.address.door_no[:64]
+            self.additional_details["legacyInfo"]["HouseNo"] = context["HouseNo"]
+
     def process_owner_information(self, context=None):
         owners = context["Owner"]
 
@@ -186,8 +195,9 @@ class IkonProperty(Property):
         pd: PropertyDetail = self.property_details[0]
         pd.units = []
 
-        if floors == 'Â' or floors == '':
+        if floors == 'Â' or floors == '' or floors is None:
             pd.property_type = "VACANT"
+            pd.no_of_floors = 1
             pd.land_area = context["PlotArea"]
         else:
 
@@ -202,6 +212,11 @@ class IkonProperty(Property):
 
                 if OC_MAP[occupancy] == "RENTED":
                     unit.arv = float(tax) * (100 / 7.5)
+
+                    if unit.arv == 0:
+                        unit.arv = None
+                        unit.occupancy_type = "UNOCCUPIED"
+
                 floor_set.add(FLOOR_MAP[floor])
 
                 if usage == "Residential":
@@ -220,7 +235,7 @@ class IkonProperty(Property):
 
             pd.no_of_floors = len(floor_set)
 
-            if len(pd.units) == 1 and "0" not in floor_set:
+            if len(floor_set) == 1 and "0" not in floor_set:
                 pd.property_sub_type = "SHAREDPROPERTY"
                 pd.no_of_floors = 2
                 pd.build_up_area = context["PlotArea"]
@@ -238,10 +253,10 @@ class IkonProperty(Property):
         self.process_owner_information(context)
         self.process_exemption(context)
         self.process_property_type(context)
+        self.process_additional_details(context)
         self.process_address(context)
         self.property_details[0].financial_year = financial_year
         self.process_ownershiptype(context)
-        self.process_additional_details(context)
         self.process_usage(context)
         self.process_floor_information(context)
         self.correct_mobile_number(context)
@@ -369,7 +384,7 @@ class PropertyTaxParser():
         PropertyCreateRequest(ri, [property])
 
 
-owner_pattern = re.compile("(?<![DSNW])/(?![OA])", re.I)
+owner_pattern = re.compile("(?<![DSNMW])/(?![OSA])", re.I)
 
 
 def parse_owners_information(text):
