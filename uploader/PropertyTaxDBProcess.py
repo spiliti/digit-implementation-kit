@@ -4,24 +4,10 @@ import json
 from common import superuser_login
 from uploader.PropertyTaxParser import IkonProperty
 
+
 connection = psycopg2.connect("dbname=postgres user=postgres password=postgres")
 cursor = connection.cursor()
-postgresql_select_Query = """select row_to_json(pd) from pt_legacy_data as pd where pd."Session"='2017-2018' and pd.upload_status ='EXCEPTION' and pd.new_locality_code is not null limit 10"""
-
-
-def update_data(ack_number, update_field_data, update_field):
-    # print(update_fields)
-    # print(update_fields.values())
-    # print(field)
-    if update_field == 'new_propertyid':
-        qurey = """UPDATE pt_legacy_data SET "new_propertyid"= %s where \"AcknowledgementNo\"=%s"""
-    if update_field == 'upload_status':
-        qurey = """UPDATE pt_legacy_data SET \"upload_status\"= %s where \"AcknowledgementNo\"=%s"""
-    if update_field == 'error_message':
-        qurey = "UPDATE pt_legacy_data SET \"error_message\"= %s where \"AcknowledgementNo\"=%s"
-    cursor.execute(qurey, (update_field_data, ack_number))
-    connection.commit()
-    pass
+postgresql_select_Query = """select row_to_json(pd) from pt_legacy_data as pd where pd."Session"='2017-2018' and pd.upload_status ='ERROR_OLD' and pd.new_locality_code is not null limit 10"""
 
 
 def update_db_record(uuid, **kwargs):
@@ -38,6 +24,7 @@ def update_db_record(uuid, **kwargs):
 def main():
     continue_processing = True
     access_token = superuser_login()["access_token"]
+    import time
 
     while continue_processing:
         cursor.execute(postgresql_select_Query)
@@ -56,7 +43,10 @@ def main():
             try:
                 p = IkonProperty()
                 p.process_record(json_data, "pb.testing")
+
+                start = time.clock()
                 req, res = p.upload_property(access_token)
+                time_taken = time.clock() - start
 
                 if "Properties" in res:
                     pt_id = res["Properties"][0]["propertyId"]
@@ -71,7 +61,8 @@ def main():
                                      new_total=total_amount,
                                      new_propertyid=pt_id,
                                      new_assessmentnumber=ack_no,
-                                     req_json=json.dumps(req))
+                                     req_json=json.dumps(req),
+                                     time_taken=time_taken)
                 else:
                     # Some error has occurred
                     update_db_record(uuid, upload_status="ERROR",
