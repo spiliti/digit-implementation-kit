@@ -2,14 +2,15 @@ from common import *
 
 access_token = superuser_login()["access_token"]
 
+sheet_name = "Sheet2"
 dfs, wks = open_google_spreadsheet(
     # "https://docs.google.com/spreadsheets/d/1uSuV0azrEVlDj2422Gd1IxMjFDeu55lCHOj2ListV6U/edit?ts=5b7168d7#gid=1486766778",
     "https://docs.google.com/spreadsheets/d/1h2VMSvwoP28nTp_d0kDameundtRIi-MkQM9w4EHcv1k/edit#gid=0",
-    "Billing slab_test")
+    sheet_name)    # "Billing slab_test")
 
-tenant_id = 'pb.mohali'
-sheet = get_sheet(dfs, "Billing slab_test")
-wk = wks.worksheet("Billing slab_test")
+tenant_id = 'pb.testing'
+sheet = get_sheet(dfs, sheet_name)
+wk = wks.worksheet(sheet_name)
 
 template = get_slab_template()
 
