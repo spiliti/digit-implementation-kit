@@ -166,7 +166,7 @@ INSERT INTO eg_businessdetails(
   VALUES (nextval('seq_eg_businessdetails'), 'Water Charges', '/receipts/receipt-create.action', true, 'WC','B','01','505100',null,null,'AS',false,(select id from eg_businesscategory where code='WC' and tenantid='pb.__city__'),false,null,(select extract ('epoch' from (select * from now()))*1000),(select extract ('epoch' from (select * from now()))*1000),1,1,1,0,'pb.__city__',false);
 
 INSERT INTO eg_businessdetails(
-          id, name, businessurl, isenabled, code, businesstype, fund, function,
+          id, name, businessurl, isenabled, code, businesstype, fund, function, 
           fundsource, functionary, department, vouchercreation, businesscategory, 
           isvoucherapproved, vouchercutoffdate, createddate, lastmodifieddate, 
           createdby, lastmodifiedby, ordernumber, version, tenantid, callbackforapportioning)
