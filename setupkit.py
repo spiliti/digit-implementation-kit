@@ -627,6 +627,9 @@ def upsert_business_details(tenant_id, auth_token, name, code, url, type, fund_c
         return api_call(auth_token, "egov-common-masters/businessDetails/_create", {"tenantId": tenant_id},
                         "BusinessDetails", [data])
 
+def data_rainmaker_tl(tenant_id,auth_token,modules,locale):
+    return api_call(auth_token, "egov-common-masters/businessCategory/_create", {"tenantId": tenant_id,"modules":modules,"locale":locale })
+
 
 if __name__ == "__main__":
     auth_token = superuser_login()["access_token"]
@@ -648,10 +651,11 @@ if __name__ == "__main__":
     # #print(upsert_chart_of_accounts(tenant_id,auth_token,'4501056','Cash-Cheques-in-hand',"A","Cheque In Hand","45010"))
     # print(upsert_instrument_type(tenant_id,auth_token,'Cash',"Instrument for Cash payments"))
     # print(upsert_instrument_type(tenant_id,auth_token,'Online',"Instrument for Online payments"))
-    # print(upsert_instrument_type(tenant_id,auth_token,'BankChallan',"Instrument for BankChallan payments"))
+    # print(upsert_instrument_type(tenant_id,auth_token,'BankChallan',"Instrument for BankChallan paen_INyments"))
     # print(upsert_instrument_type(tenant_id,auth_token,'DD',"Instrument for Demand Draft payments"))
     # print(upsert_tax_heads(tenant_id,auth_token,'PT','PENALTYES','Pt adhoc penalty','PT_ADHOC_PENALTY'))
     # print(upsert_chart_of_accounts(tenant_id, auth_token, '4501051', 'Cash-Cheques-in',"A", "Cheque In Hand",  "45010"))
     # print(search_tax_heads(tenant_id,auth_token,'PT'))
     # print(upsert_business_details(tenant_id,auth_token,'Citizen Services','CS',"/receipts/receipt-create.action","BILLBASED","01","909100","AS"))
-    print(upsert_tax_periods(tenant_id, auth_token, 'PT', "annual", "2019-20"))
+    #print(upsert_tax_periods(tenant_id, auth_token, 'PT', "annual", "2019-20"))
+    print(data_rainmaker_tl('pb',auth_token,'rainmaker-common','en_IN'))
