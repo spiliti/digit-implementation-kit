@@ -8,11 +8,11 @@ dbname = os.getenv("DB_NAME", "postgres")
 dbuser = os.getenv("DB_USER", "postgres")
 dbpassword = os.getenv("DB_PASSWORD", "postgres")
 tenant = os.getenv("TENANT", "pb.testing")
-
-connection = psycopg2.connect("dbname={} user={} password={}".format(dbname, dbuser, dbpassword))
+host = os.getenv("DB_HOST", "localhost")
+connection = psycopg2.connect("dbname={} user={} password={} host={}".format(dbname, dbuser, dbpassword, host))
 cursor = connection.cursor()
 postgresql_select_Query = """
-select row_to_json(pd) from pt_legacy_data as pd where pd.upload_status is NULL and pd.new_locality_code and pd.parent_uuid is not null limit 10
+select row_to_json(pd) from pt_legacy_data as pd where pd.upload_status is NULL and pd.new_locality_code is not null and pd.parent_uuid is null limit 10
 """
 
 
@@ -36,7 +36,9 @@ def main():
         cursor.execute(postgresql_select_Query)
         data = cursor.fetchmany(10)
 
+        #continue_processing = False
         if not data:
+            print ("No more data to process. Script exiting")
             continue_processing = False
             cursor.close()
             connection.close()
@@ -44,7 +46,7 @@ def main():
         for row in data:
             json_data = row[0]
             uuid = json_data["uuid"]
-
+            print ('Processing {}'.format(uuid))
             try:
                 p = IkonProperty()
                 p.process_record(json_data, tenant)
@@ -60,6 +62,7 @@ def main():
                     total_amount = calc["totalAmount"]
                     tax_amount = calc["taxAmount"]
                     # upload_status = "COMPLETED"
+                    print("Record updloaded successfully")
                     update_db_record(uuid, upload_status="COMPLETED",
                                      upload_response=json.dumps(res),
                                      new_tax=tax_amount,
@@ -70,6 +73,8 @@ def main():
                                      time_taken=time_taken)
                 else:
                     # Some error has occurred
+                    print("Error occured while uploading data")
+                    print(json.dumps(res))
                     update_db_record(uuid, upload_status="ERROR",
                                      upload_response=json.dumps(res),
                                      req_json=json.dumps(req))
@@ -78,7 +83,6 @@ def main():
                 traceback.print_exc()
                 update_db_record(uuid, upload_status="EXCEPTION", upload_response=str(ex))
 
-            break
 
 
 if __name__ == "__main__":
