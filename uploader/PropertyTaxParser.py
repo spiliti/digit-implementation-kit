@@ -425,19 +425,25 @@ def parse_flat_information(text):
     # text = text or """Ground Floor / 1100.00 / Residential / Self Occupied / Pucca / 939.58Ground Floor - Vacant In Use / 250.00 / Residential / Self Occupied / Pucca / 185.421st Floor / 1100.00 / Residential / Self Occupied / Pucca / 613.252nd Floor / 1100.00 / Residential / Self Occupied / Pucca / 368.50"""
 
     info = list(map(str.strip, owner_pattern.split(text, 5)))
-    owners = []
+    floors = []
     while "/" in info[-1]:
-        last_element = info[-1]
+        last_element = info[-1].strip().strip("/").strip()
 
         # get the phone number
         split_index = last_element.find(".") + 3
         info[-1] = last_element[:split_index]
-        owners.append(info)
-        info = list(map(str.strip, owner_pattern.split(last_element[split_index:], 5)))
+        floors.append(info)
+        remaining = last_element[split_index:].strip().strip("/").strip()
+        if remaining:
+            info = list(map(str.strip, owner_pattern.split(remaining, 5)))
+        else:
+            info = None
+            break
 
-    owners.append(info)
+    if info:
+        floors.append(info)
 
-    return owners
+    return floors
 
 if __name__ == "__main__":
     p = IkonProperty()
