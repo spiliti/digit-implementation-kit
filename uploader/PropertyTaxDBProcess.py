@@ -1,13 +1,19 @@
 import psycopg2
 import json
-
+import os
 from common import superuser_login
 from uploader.PropertyTaxParser import IkonProperty
 
+dbname = os.getenv("DB_NAME", "postgres")
+dbuser = os.getenv("DB_USER", "postgres")
+dbpassword = os.getenv("DB_PASSWORD", "postgres")
+tenant = os.getenv("TENANT", "pb.testing")
 
-connection = psycopg2.connect("dbname=postgres user=postgres password=postgres")
+connection = psycopg2.connect("dbname={} user={} password={}".format(dbname, dbuser, dbpassword))
 cursor = connection.cursor()
-postgresql_select_Query = """select row_to_json(pd) from pt_legacy_data as pd where pd."Session"='2017-2018' and pd.upload_status ='ERROR_OLD' and pd.new_locality_code is not null limit 10"""
+postgresql_select_Query = """
+select row_to_json(pd) from pt_legacy_data as pd where pd.upload_status is NULL and pd.new_locality_code and pd.parent_uuid is not null limit 10
+"""
 
 
 def update_db_record(uuid, **kwargs):
@@ -35,14 +41,13 @@ def main():
             cursor.close()
             connection.close()
 
-
         for row in data:
             json_data = row[0]
             uuid = json_data["uuid"]
 
             try:
                 p = IkonProperty()
-                p.process_record(json_data, "pb.testing")
+                p.process_record(json_data, tenant)
 
                 start = time.clock()
                 req, res = p.upload_property(access_token)
@@ -72,6 +77,8 @@ def main():
                 import traceback
                 traceback.print_exc()
                 update_db_record(uuid, upload_status="EXCEPTION", upload_response=str(ex))
+
+            break
 
 
 if __name__ == "__main__":
