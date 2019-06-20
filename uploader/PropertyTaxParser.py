@@ -21,6 +21,15 @@ FLOOR_MAP = {
     "Basement 2": "-2",
     "Basement 1": "-1",
     "Basement 3": "-3",
+    "25th Floor": "25",
+    "24th Floor": "24",
+    "23th Floor": "23",
+    "22th Floor": "22",
+    "21th Floor": "21",
+    "20th Floor": "20",
+    "19th Floor": "19",
+    "18th Floor": "18",
+    "17th Floor": "17",
     "16th Floor": "16",
     "15th Floor": "15",
     "14th Floor": "14",
@@ -38,6 +47,18 @@ FLOOR_MAP = {
     "2nd Floor": "2",
     "1st Floor": "1",
 }
+
+def get_floor_number(floor: str):
+    if floor in FLOOR_MAP:
+        return FLOOR_MAP[floor]
+
+    if "GROUND" in floor.upper():
+        return "0"
+    elif " 1ST" in floor:
+        return "1"
+    elif " 2ND" in floor:
+        return "2"
+
 
 OC_MAP = {
     "Self Occupied": "SELFOCCUPIED",
@@ -206,7 +227,7 @@ class IkonProperty(Property):
             building_category = context["BuildingCategory"]
 
             for floor, covered_area, usage, occupancy, _, tax in parse_flat_information(context["Floor"]):
-                unit = Unit(floor_no=FLOOR_MAP[floor],
+                unit = Unit(floor_no=get_floor_number(floor),
                             occupancy_type=OC_MAP[occupancy],
                             unit_area=float(covered_area) / 9)
 
@@ -217,7 +238,7 @@ class IkonProperty(Property):
                         unit.arv = None
                         unit.occupancy_type = "UNOCCUPIED"
 
-                floor_set.add(FLOOR_MAP[floor])
+                floor_set.add(get_floor_number(floor))
 
                 if usage == "Residential":
                     unit.usage_category_major = "RESIDENTIAL"
