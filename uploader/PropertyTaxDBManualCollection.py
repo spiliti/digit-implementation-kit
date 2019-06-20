@@ -24,17 +24,20 @@ def main():
         pd.upload_status ='COMPLETED' and pd.receipt_status is NULL
         and batchname = '{}'
         and parent_uuid is null  
-        limit 10
+        limit 1
     """.format(batch)
 
     auth_token = superuser_login()["access_token"]
     cursor.execute(postgresql_select_Query)
     data = cursor.fetchmany(10)
 
+    print ("found data for {}".format(len(data)))
+
     for row in data:
         json_data = row[0]
         uuid = json_data["uuid"]
 
+        print ("processing uuid - {}".format(uuid))
         new_propertyid = json_data["new_propertyid"]
 
         session = json_data["Session"].replace("-20", "-")
@@ -45,14 +48,14 @@ def main():
             "PT_ADHOC_REBATE": 0,
             "PT_ADVANCE_CARRYFORWARD": 0,
             "PT_OWNER_EXEMPTION": 0,
-            "PT_TIME_REBATE": float(json_data["Rebate"]),
-            "PT_UNIT_USAGE_EXEMPTION": float(json_data["ExemptionAmt"]),
+            "PT_TIME_REBATE": -round(float(json_data["Rebate"])),
+            "PT_UNIT_USAGE_EXEMPTION": -round(float(json_data["ExemptionAmt"])),
             "PT_ADHOC_PENALTY": 0,
-            "PT_TAX": float(json_data["GrossTax"]),
-            "PT_FIRE_CESS": float(json_data["FireCharges"]),
+            "PT_TAX": round(float(json_data["GrossTax"])),
+            "PT_FIRE_CESS": round(float(json_data["FireCharges"])),
             "PT_CANCER_CESS": 0,
-            "PT_TIME_PENALTY": float(json_data["Penalty"]),
-            "PT_TIME_INTEREST": float(json_data["InterestAmt"])
+            "PT_TIME_PENALTY": round(float(json_data["Penalty"])),
+            "PT_TIME_INTEREST": round(float(json_data["InterestAmt"]))
         }
 
         g8_book_no = json_data["G8BookNo"]
@@ -74,7 +77,7 @@ def main():
 
         try:
             start_time = time.time()
-            receipt_request, receipt_response = create_manual_receipt_collection(auth_token, "pb.testing",
+            receipt_request, receipt_response = create_manual_receipt_collection(auth_token, tenant,
                                                                                  new_propertyid, session, owner,
                                                                                  amount,
                                                                                  old_g8_receiptno,
@@ -83,12 +86,14 @@ def main():
             time_taken_receipt = time.time() - start_time
 
             if "Receipt" in receipt_response:
+                print("receipt creation successfull")
                 update_db_record(uuid, receipt_number=receipt_response["Receipt"][0]["Bill"][0]["billDetails"][0][
                     "receiptNumber"],
                                  receipt_status="COMPLETED", time_taken_receipt=time_taken_receipt,
                                  receipt_response=json.dumps(receipt_response),
                                  receipt_request=json.dumps(receipt_request))
             else:
+                print("receipt create failed with error")
                 # Some error has occurred
                 update_db_record(uuid, receipt_status="ERROR", receipt_response=json.dumps(receipt_response),
                                  receipt_request=json.dumps(receipt_request))
@@ -98,3 +103,7 @@ def main():
             import traceback
             traceback.print_exc()
             update_db_record(uuid, receipt_status="EXCEPTION", receipt_response=str(ex))
+
+
+if __name__ == "__main__":
+   main()
