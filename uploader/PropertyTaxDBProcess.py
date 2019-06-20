@@ -9,11 +9,12 @@ dbuser = os.getenv("DB_USER", "postgres")
 dbpassword = os.getenv("DB_PASSWORD", "postgres")
 tenant = os.getenv("TENANT", "pb.testing")
 host = os.getenv("DB_HOST", "localhost")
+batch = os.getenv("BATCH_NAME", "1")
 connection = psycopg2.connect("dbname={} user={} password={} host={}".format(dbname, dbuser, dbpassword, host))
 cursor = connection.cursor()
 postgresql_select_Query = """
-select row_to_json(pd) from pt_legacy_data as pd where pd.upload_status is NULL and pd.new_locality_code is not null and pd.parent_uuid is null limit 10
-"""
+select row_to_json(pd) from pt_legacy_data as pd where pd.upload_status is NULL and pd.new_locality_code is not null and pd.parent_uuid is null and batchname='{}' limit 10
+""".format(batch)
 
 
 def update_db_record(uuid, **kwargs):
