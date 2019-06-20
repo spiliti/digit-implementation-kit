@@ -1,10 +1,4 @@
 import copy
-import time
-import json
-
-import psycopg2
-
-from config import config
 
 from common import search_receipt, search_property, search_demand, update_demand, generate_bill, create_receipt, \
     update_property, superuser_login
