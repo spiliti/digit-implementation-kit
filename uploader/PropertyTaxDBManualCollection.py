@@ -21,89 +21,101 @@ def main():
     cursor = connection.cursor()
     postgresql_select_Query = """
         select row_to_json(pd) from pt_legacy_data as pd where  
-        pd.upload_status ='COMPLETED' and pd.receipt_status is NULL
+        pd.new_propertyid is not null
+        and pd.receipt_status is NULL
         and batchname = '{}'
-        and parent_uuid is null  
-        limit 1
+        limit 10
     """.format(batch)
 
     auth_token = superuser_login()["access_token"]
-    cursor.execute(postgresql_select_Query)
-    data = cursor.fetchmany(10)
+    while continue_processing:
+        cursor.execute(postgresql_select_Query)
+        data = cursor.fetchmany(10)
 
-    print ("found data for {}".format(len(data)))
+        # continue_processing = False
+        if not data:
+            print("No more data to process. Script exiting")
+            continue_processing = False
+            cursor.close()
+            connection.close()
 
-    for row in data:
-        json_data = row[0]
-        uuid = json_data["uuid"]
+        print("found data for {}".format(len(data)))
 
-        print ("processing uuid - {}".format(uuid))
-        new_propertyid = json_data["new_propertyid"]
+        for row in data:
+            json_data = row[0]
+            uuid = json_data["uuid"]
 
-        session = json_data["Session"].replace("-20", "-")
+            print("processing uuid - {}".format(uuid))
+            new_propertyid = json_data["new_propertyid"]
 
-        owner = json_data["Owner"].split('/')[0].strip()
+            session = json_data["Session"].replace("-20", "-")
 
-        amount = {
-            "PT_ADHOC_REBATE": 0,
-            "PT_ADVANCE_CARRYFORWARD": 0,
-            "PT_OWNER_EXEMPTION": 0,
-            "PT_TIME_REBATE": -round(float(json_data["Rebate"])),
-            "PT_UNIT_USAGE_EXEMPTION": -round(float(json_data["ExemptionAmt"])),
-            "PT_ADHOC_PENALTY": 0,
-            "PT_TAX": round(float(json_data["GrossTax"])),
-            "PT_FIRE_CESS": round(float(json_data["FireCharges"])),
-            "PT_CANCER_CESS": 0,
-            "PT_TIME_PENALTY": round(float(json_data["Penalty"])),
-            "PT_TIME_INTEREST": round(float(json_data["InterestAmt"]))
-        }
+            owner = json_data["Owner"].split('/')[0].strip()
 
-        g8_book_no = json_data["G8BookNo"]
+            amount = {
+                "PT_ADHOC_REBATE": 0,
+                "PT_ADVANCE_CARRYFORWARD": 0,
+                "PT_OWNER_EXEMPTION": 0,
+                "PT_TIME_REBATE": -round(float(json_data["Rebate"])),
+                "PT_UNIT_USAGE_EXEMPTION": -round(float(json_data["ExemptionAmt"])),
+                "PT_ADHOC_PENALTY": 0,
+                "PT_TAX": round(float(json_data["GrossTax"])),
+                "PT_FIRE_CESS": round(float(json_data["FireCharges"])),
+                "PT_CANCER_CESS": 0,
+                "PT_TIME_PENALTY": round(float(json_data["Penalty"])),
+                "PT_TIME_INTEREST": round(float(json_data["InterestAmt"]))
+            }
 
-        g8_receipt_no = json_data["G8ReceiptNo"]
+            amount = {
+                "PT_TAX": round(float(json_data["TaxAmt"]))
+            }
 
-        if g8_receipt_no and g8_book_no:
-            old_g8_receiptno = g8_book_no + '/' + g8_receipt_no
-        elif g8_receipt_no:
-            old_g8_receiptno = g8_receipt_no
-        else:
-            old_g8_receiptno = json_data["AcknowledgementNo"]
+            g8_book_no = json_data["G8BookNo"]
 
-        payment_date = json_data["PaymentDate"]
+            g8_receipt_no = json_data["G8ReceiptNo"]
 
-        tax_amt = float(json_data["TaxAmt"])
-
-        payment_mode = "Cash"  # json_data["PaymentMode"]
-
-        try:
-            start_time = time.time()
-            receipt_request, receipt_response = create_manual_receipt_collection(auth_token, tenant,
-                                                                                 new_propertyid, session, owner,
-                                                                                 amount,
-                                                                                 old_g8_receiptno,
-                                                                                 to_epoch(payment_date),
-                                                                                 tax_amt, payment_mode)
-            time_taken_receipt = time.time() - start_time
-
-            if "Receipt" in receipt_response:
-                print("receipt creation successfull")
-                update_db_record(uuid, receipt_number=receipt_response["Receipt"][0]["Bill"][0]["billDetails"][0][
-                    "receiptNumber"],
-                                 receipt_status="COMPLETED", time_taken_receipt=time_taken_receipt,
-                                 receipt_response=json.dumps(receipt_response),
-                                 receipt_request=json.dumps(receipt_request))
+            if g8_receipt_no and g8_book_no:
+                old_g8_receiptno = g8_book_no + '/' + g8_receipt_no
+            elif g8_receipt_no:
+                old_g8_receiptno = g8_receipt_no
             else:
-                print("receipt create failed with error")
-                # Some error has occurred
-                update_db_record(uuid, receipt_status="ERROR", receipt_response=json.dumps(receipt_response),
-                                 receipt_request=json.dumps(receipt_request))
+                old_g8_receiptno = json_data["AcknowledgementNo"]
 
-                pass
-        except Exception as ex:
-            import traceback
-            traceback.print_exc()
-            update_db_record(uuid, receipt_status="EXCEPTION", receipt_response=str(ex))
+            payment_date = json_data["PaymentDate"]
+
+            tax_amt = float(json_data["TaxAmt"])
+
+            payment_mode = "Cash"  # json_data["PaymentMode"]
+
+            try:
+                start_time = time.time()
+                receipt_request, receipt_response = create_manual_receipt_collection(auth_token, tenant,
+                                                                                     new_propertyid, session, owner,
+                                                                                     amount,
+                                                                                     old_g8_receiptno,
+                                                                                     to_epoch(payment_date),
+                                                                                     tax_amt, payment_mode)
+                time_taken_receipt = time.time() - start_time
+
+                if "Receipt" in receipt_response:
+                    print("receipt creation successfull")
+                    update_db_record(uuid, receipt_number=receipt_response["Receipt"][0]["Bill"][0]["billDetails"][0][
+                        "receiptNumber"],
+                                     receipt_status="COMPLETED", time_taken_receipt=time_taken_receipt,
+                                     receipt_response=json.dumps(receipt_response),
+                                     receipt_request=json.dumps(receipt_request))
+                else:
+                    print("receipt create failed with error")
+                    # Some error has occurred
+                    update_db_record(uuid, receipt_status="ERROR", receipt_response=json.dumps(receipt_response),
+                                     receipt_request=json.dumps(receipt_request))
+
+                    pass
+            except Exception as ex:
+                import traceback
+                traceback.print_exc()
+                update_db_record(uuid, receipt_status="EXCEPTION", receipt_response=str(ex))
 
 
 if __name__ == "__main__":
-   main()
+    main()
