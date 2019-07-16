@@ -258,6 +258,11 @@ if __name__ == "__main__":
     #                None,
     #                None, "rainmaker-uc", name_is_blank=True, upload_localizations=False,process_dot=True)
 
-    process_master("BillingService", "TaxHeadMaster",
+    # process_master("BillingService", "TaxHeadMaster",
+    #                None,
+    #                None, "rainmaker-uc", name_is_blank=True, upload_localizations=False,process_dot=False)
+
+    process_master("firenoc", "BuildingType",
                    None,
-                   None, "rainmaker-uc", name_is_blank=True, upload_localizations=False,process_dot=False)
+                   None, "rainmaker-noc", name_is_blank=True, upload_localizations=False, process_dot=True)
+

@@ -368,9 +368,9 @@ class IkonProperty(Property):
                 self.get_property_json()
             ]
         }
-        print(json.dumps(request_data, indent=2))
+        # print(json.dumps(request_data, indent=2))
         response = requests.post(
-            urljoin(config.HOST, "/pt-services-v2/property/_create?tenantId=pb.testing"),
+            urljoin(config.HOST, "/pt-services-v2/property/_create?tenantId="),
             json=request_data)
 
         res = response.json()
@@ -388,6 +388,7 @@ class IkonProperty(Property):
                     owner.mobile_number == "1111111111" or owner.mobile_number[:1] not in ["6", "7", "8", "9"]:
                 owner.mobile_number = "9999999999"
             owner.name = pattern.sub("-", owner.name)
+            owner.father_or_husband_name = pattern.sub("-", owner.father_or_husband_name)
         ci = pd.citizen_info
 
         if len(ci.mobile_number) != 10 \

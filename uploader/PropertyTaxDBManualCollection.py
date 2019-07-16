@@ -11,7 +11,7 @@ from uploader.PropertyTaxManualCollection import create_manual_receipt_collectio
 dbname = os.getenv("DB_NAME", "postgres")
 dbuser = os.getenv("DB_USER", "postgres")
 dbpassword = os.getenv("DB_PASSWORD", "postgres")
-tenant = os.getenv("TENANT", "pb.testing")
+tenant = os.getenv("TENANT", "pb.jalandhar_legacy")
 host = os.getenv("DB_HOST", "localhost")
 batch = os.getenv("BATCH_NAME", "1")
 
@@ -23,11 +23,15 @@ def main():
         select row_to_json(pd) from pt_legacy_data as pd where  
         pd.new_propertyid is not null
         and pd.receipt_status is NULL
+        and "Session" = '2019-2020'
         and batchname = '{}'
         limit 10
     """.format(batch)
 
     auth_token = superuser_login()["access_token"]
+
+    continue_processing = True
+
     while continue_processing:
         cursor.execute(postgresql_select_Query)
         data = cursor.fetchmany(10)
@@ -67,8 +71,19 @@ def main():
             }
 
             amount = {
-                "PT_TAX": round(float(json_data["TaxAmt"]))
+                "PT_ADHOC_REBATE": 0,
+                "PT_ADVANCE_CARRYFORWARD": 0,
+                "PT_OWNER_EXEMPTION": 0,
+                "PT_TIME_REBATE": 0,
+                "PT_UNIT_USAGE_EXEMPTION": 0,
+                "PT_ADHOC_PENALTY": 0,
+                "PT_TAX": float(json_data["TaxAmt"]),
+                "PT_FIRE_CESS": 0,
+                "PT_CANCER_CESS": 0,
+                "PT_TIME_PENALTY": 0,
+                "PT_TIME_INTEREST": 0
             }
+
 
             g8_book_no = json_data["G8BookNo"]
 
