@@ -154,6 +154,7 @@ class PropertyDetail:
     citizen_info: Optional[CitizenInfo]
     institution: Optional[Institution]
     additional_details: Optional[PropertyDetailAdditionalDetails]
+    source: Optional[str]
 
     def __init__(self, usage_category_minor: Optional[str] = None, units: Optional[List[Unit]] = None,
                  usage_category_major: Optional[str] = None, property_sub_type: Optional[str] = None,
@@ -163,6 +164,7 @@ class PropertyDetail:
                  owners: Optional[List[Owner]] = None, financial_year: Optional[str] = None,
                  citizen_info: Optional[CitizenInfo] = None,
                  institution: Optional[Institution] = None,
+                 source: Optional[str] = None,
                  additional_details: Optional[PropertyDetailAdditionalDetails] = None) -> None:
         self.usage_category_minor = usage_category_minor
         self.units = units
@@ -178,7 +180,8 @@ class PropertyDetail:
         self.financial_year = financial_year
         self.citizen_info = citizen_info
         self.additional_details = additional_details
-
+        self.institution = institution
+        self.source = source
 
 class Property:
     tenant_id: Optional[str]

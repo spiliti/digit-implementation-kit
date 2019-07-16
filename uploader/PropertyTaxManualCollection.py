@@ -108,7 +108,10 @@ amounts = {
 
 def to_epoch(date_time):
     import time
-    return int(time.mktime(time.strptime(date_time, "%d/%m/%Y")))
+    try:
+        return int(time.mktime(time.strptime(date_time, "%d/%m/%Y")))
+    except:
+        return int(time.mktime(time.strptime(date_time, "%d/%m/%y")))
 
 
 if __name__ == "__main__":
