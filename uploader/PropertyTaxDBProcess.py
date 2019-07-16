@@ -34,7 +34,7 @@ def update_db_record(uuid, **kwargs):
     for key in kwargs.keys():
         columns.append(key + "=%s")
 
-    query = """UPDATE pt_legacy_data SET {} where uuid = %s""".format(",".join(columns))
+    query = """UPDATE {} SET {} where uuid = %s""".format(table_name, ",".join(columns))
     cursor.execute(query, list(kwargs.values()) + [uuid])
     connection.commit()
     pass
