@@ -289,7 +289,7 @@ class IkonProperty(Property):
         return convert_json(json.loads(property_encoder), underscore_to_camel)
 
     def process_property_type(self, context):
-        property_type = context['PropertyType']
+        property_type = context['propertytype']
 
         PT_MAP = {
             "Mix-Use": "MIXED",
