@@ -149,25 +149,25 @@ class IkonProperty(Property):
         })]
 
     def process_additional_details(self, context):
-        self.old_property_id = "RID{}".format(context["ReturnId"])
+        self.old_property_id = "RID{}".format(context["returnid"])
         self.additional_details = {
             "legacyInfo": {
-                "ReturnID": context["ReturnId"],
-                "UploadYear": context["Session"],
-                "TaxAmt": context["TaxAmt"],
-                "AcknowledgementNo": context["AcknowledgementNo"],
-                "Colony": context["Colony"],
-                "Sector": context["Sector"],
-                "ExemptionCategory": context["ExemptionCategory"],
-                "TotalCoveredArea": context["TotalCoveredArea"],
-                "GrossTax": context["GrossTax"],
-                "AmountPaid": context["AmountPaid"]
+                "returnid": context["returnid"],
+                "session": context["session"],
+                "taxamt": context["taxamt"],
+                "acknowledgementno": context["acknowledgementno"],
+                "colony": context["colony"],
+                "sector": context["sector"],
+                "exemptioncategory": context["exemptioncategory"],
+                "totalcoveredarea": context["totalcoveredarea"],
+                "grosstax": context["grosstax"],
+                "amountpaid": context["amountpaid"]
             }
         }
 
     def process_usage(self, context):
         pd = self.property_details[0]
-        if context["Usage"] == "Vacant Plot":
+        if context["usage"] == "Vacant Plot":
             pd.property_type = "VACANT"
             pd.no_of_floors = 1
         else:
@@ -175,14 +175,14 @@ class IkonProperty(Property):
 
     def process_address(self, context):
         locality = Locality(code=context["new_locality_code"])
-        self.address = Address(city="Jalandhar", door_no=context["HouseNo"], locality=locality)
+        self.address = Address(city="Jalandhar", door_no=context["houseno"], locality=locality)
 
         if len(self.address.door_no) > 64:
             self.address.door_no = self.address.door_no[:64]
-            self.additional_details["legacyInfo"]["HouseNo"] = context["HouseNo"]
+            self.additional_details["legacyInfo"]["houseno"] = context["houseno"]
 
     def process_owner_information(self, context=None):
-        owners = context["Owner"]
+        owners = context["owner"]
 
         for name, father_name, mobile in parse_owners_information(owners):
             owner = Owner(name=name, father_or_husband_name=father_name, mobile_number=mobile)
@@ -212,21 +212,21 @@ class IkonProperty(Property):
                 self.property_details[0].citizen_info = CitizenInfo(name=name, mobile_number=mobile)
 
     def process_floor_information(self, context):
-        floors = context["Floor"].strip()
+        floors = context["floor"].strip()
         pd: PropertyDetail = self.property_details[0]
         pd.units = []
 
         if floors == 'Â' or floors == '' or floors is None:
             pd.property_type = "VACANT"
             pd.no_of_floors = 1
-            pd.land_area = context["PlotArea"]
+            pd.land_area = context["plotarea"]
         else:
 
             floor_set = set()
 
-            building_category = context["BuildingCategory"]
+            building_category = context["buildingcategory"]
 
-            for floor, covered_area, usage, occupancy, _, tax in parse_flat_information(context["Floor"]):
+            for floor, covered_area, usage, occupancy, _, tax in parse_flat_information(context["floor"]):
                 unit = Unit(floor_no=get_floor_number(floor),
                             occupancy_type=OC_MAP[occupancy],
                             unit_area=float(covered_area) / 9)
@@ -259,10 +259,10 @@ class IkonProperty(Property):
             if len(floor_set) == 1 and "0" not in floor_set:
                 pd.property_sub_type = "SHAREDPROPERTY"
                 pd.no_of_floors = 2
-                pd.build_up_area = context["PlotArea"]
+                pd.build_up_area = context["plotarea"]
             else:
                 pd.property_sub_type = "INDEPENDENTPROPERTY"
-                pd.land_area = context["PlotArea"]
+                pd.land_area = context["plotarea"]
 
     def process_record(self, context, tenantid, financial_year="2019-20"):
         # func = BC_MAP[context["BuildingCategory"]]
@@ -270,7 +270,7 @@ class IkonProperty(Property):
         #     func(self, context)
         # else:
         #     raise Exception("No Mapping function")
-        financial_year = context["Session"].replace("-20", "-")
+        financial_year = context["session"].replace("-20", "-")
         self.process_owner_information(context)
         self.process_exemption(context)
         self.process_property_type(context)
@@ -303,7 +303,7 @@ class IkonProperty(Property):
 
     def process_ownershiptype(self, context):
         pd = self.property_details[0]
-        land_type = context["LandUsedType"]
+        land_type = context["landusedtype"]
 
         ONC_MAP = {
             "The building and land of Hospitals or Dispensaries owned by the State Government": (
@@ -351,7 +351,7 @@ class IkonProperty(Property):
             "BPL": "BPL"
         }
 
-        ecat = context["ExemptionCategory"]
+        ecat = context["exemptioncategory"]
 
         if ecat == "Joint Owners - Both/All Widows":
             for owner in self.property_details[0].owners:

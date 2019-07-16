@@ -23,7 +23,7 @@ select row_to_json(pd) from {} as pd
 where 
 pd.upload_status is NULL and 
 pd.new_locality_code is not null 
-and "Session" = '2019-2020'
+and session = '2019-2020'
 and batchname = '{}' 
 limit {} 
 """.format(table_name, batch, batch_size)
