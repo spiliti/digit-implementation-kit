@@ -63,7 +63,8 @@ def get_floor_number(floor: str):
 OC_MAP = {
     "Self Occupied": "SELFOCCUPIED",
     "Un-Productive": "UNOCCUPIED",
-    "Rented": "RENTED"
+    "Rented": "RENTED",
+    "Vacant AreaLand": "UNOCCUPIED"
 }
 
 from json import JSONEncoder
@@ -344,6 +345,7 @@ class IkonProperty(Property):
         EC_MAP = {
             "Widows": "WIDOW",
             "Non-Exempted": "NONE",
+            "--select--": "NONE",
             "Person, who had served, or are serving, in any rank, whether as a combatant or a non-combatant, in the Naval, Military or Air Forces of the Union of India": "DEFENSE",
             "Joint Owners - Both/All Widows": "WIDOW",
             "Handicapped": "HANDICAPPED",
