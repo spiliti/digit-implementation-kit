@@ -217,9 +217,9 @@ def create_boundary(config_function, boundary_type):
 
     offset = 1
 
-    index_code = get_column_index(wards, config.COLUMN_WARD_CODE)
-    index_name = get_column_index(wards, config.COLUMN_WARD_NAME)
-    index_zone_name = get_column_index(wards, config.COLUMN_WARD_ADMIN_ZONE_NAME)
+    index_code = get_column_index(wards, config.COLUMN_WARD_CODE) or 1
+    index_name = get_column_index(wards, config.COLUMN_WARD_NAME) or 2
+    index_zone_name = get_column_index(wards, config.COLUMN_WARD_ADMIN_ZONE_NAME) or 3
 
     ward_to_code_map = {}
     for _, row in wards.iterrows():
@@ -238,8 +238,8 @@ def create_boundary(config_function, boundary_type):
                                           "children": []}
                              , axis=1)
 
-    index_code = get_column_index(zones, config.COLUMN_ZONE_CODE)
-    index_name = get_column_index(zones, config.COLUMN_ZONE_NAME)
+    index_code = get_column_index(zones, config.COLUMN_ZONE_CODE) or 1
+    index_name = get_column_index(zones, config.COLUMN_ZONE_NAME) or 2
 
     zone_to_code_map = {}
     for _, row in zones.iterrows():
@@ -257,11 +257,11 @@ def create_boundary(config_function, boundary_type):
                                           "children": []}
                              , axis=1)
 
-    index_code = get_column_index(locality, config.COLUMN_LOCALITY_CODE)
-    index_name = get_column_index(locality, config.COLUMN_LOCALITY_NAME)
-    index_admin_block = get_column_index(locality, config.COLUMN_LOCALITY_ADMIN_BLOCK)
+    index_code = get_column_index(locality, config.COLUMN_LOCALITY_CODE) or 1
+    index_name = get_column_index(locality, config.COLUMN_LOCALITY_NAME) or 2
+    index_admin_block = get_column_index(locality, config.COLUMN_LOCALITY_ADMIN_BLOCK) or 3
     if current_boundary_type == "REVENUE":
-        index_area = get_column_index(locality, config.COLUMN_LOCALITY_AREA)
+        index_area = get_column_index(locality, config.COLUMN_LOCALITY_AREA) or 4
 
     def process_locality(row):
         area = "" if current_boundary_type == "ADMIN" else row[index_area].strip().upper().replace(" ", "").replace(
