@@ -210,7 +210,8 @@ class IkonProperty(Property):
             self.property_details[0].owners.append(owner)
 
             if self.property_details[0].citizen_info is None:
-                self.property_details[0].citizen_info = CitizenInfo(name=name, mobile_number=mobile)
+                self.property_details[0].citizen_info = CitizenInfo(name=
+                                                                    re.sub("-",name), mobile_number=mobile)
 
     def process_floor_information(self, context):
         floors = context["floor"].strip()
