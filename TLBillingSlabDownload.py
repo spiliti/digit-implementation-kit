@@ -19,6 +19,41 @@ def search_localization(auth_token):
                     {"tenantId": tenant_id, "modules": modules, "locale": locale})
 
 
+def search_mdms_data(tenant_id, auth_token):
+    return api_call(auth_token, "/egov-mdms-service/v1/_search", tenant_id, "MdmsCriteria", {
+        "tenantId": "pb",
+        "moduleDetails": [
+            {
+                "moduleName": "TradeLicense",
+                "masterDetails": [
+                    {
+                        "name": "TradeType"
+                    },
+                    {
+                        "name": "AccessoriesCategory"
+                    }
+                ]
+            }
+        ]
+    })
+
+
+def acc_mdms_data(tenant_id, auth_token):
+    trade_license_data = search_mdms_data(tenant_id, auth_token)["MdmsRes"]["TradeLicense"]["AccessoriesCategory"]
+    trade_license_acc_code_map = {}
+    for b in trade_license_data:
+        trade_license_acc_code_map[b["code"]] = []
+    return trade_license_acc_code_map
+
+
+def trade_type_mdms_data(tenant_id, auth_token):
+    trade_license_data_type = search_mdms_data(tenant_id, auth_token)["MdmsRes"]["TradeLicense"]["TradeType"]
+    trade_type_code_map = {}
+    for c in trade_license_data_type:
+        trade_type_code_map[c["code"]] = []
+    return trade_type_code_map
+
+
 def get_billing_slab_localization(auth_token):
     localization_data = search_localization(auth_token)["messages"]
     code_to_message_map = {}
@@ -34,8 +69,10 @@ def get_billing_slab_localization(auth_token):
 def get_trade_code(tradetype):
     return "TRADELICENSE_TRADETYPE_" + tradetype.replace('.', '_').replace('-', '_')
 
+
 def get_trade_acc_code(tradetype):
     return "TRADELICENSE_ACCESSORIESCATEGORY_" + tradetype.replace('.', '_').replace('-', '_')
+
 
 def download_billing_slab(config_function, auth_token):
     wk = xlwt.Workbook()
@@ -43,13 +80,13 @@ def download_billing_slab(config_function, auth_token):
     accessories: Worksheet = wk.add_sheet("Accessories items")
 
     for i, col in enumerate(
-            ["S.N.","License type", "Structure Type", "Structure sub type", "Trade Category", "Trade Type",
+            ["S.N.", "License type", "Structure Type", "Structure sub type", "Trade Category", "Trade Type",
              "Trade Sub-TypeCode", "Trade Sub-Type",
              "Charge", "UOM Unit", "UOM From", "UOM To"]):
         trades.write(0, i, col)
 
     for i, col in enumerate(
-            ["S.N.","Accessories code" ,"Accessories Name"
+            ["S.N.", "Accessories code", "Accessories Name",
              "Charge", "UOM Unit", "UOM From", "UOM To"]):
         accessories.write(0, i, col)
 
@@ -57,56 +94,83 @@ def download_billing_slab(config_function, auth_token):
 
     localization_map = get_billing_slab_localization(auth_token)
 
-    row_trade = 1
-    row_acc=1
+    acc_map = acc_mdms_data('pb', auth_token)
+    # print(acc_mdms_code.keys())
+    trade_map = trade_type_mdms_code = trade_type_mdms_data('pb', auth_token)
 
-    # print(billing_slabs)
     for billing_slab in billing_slabs:
         if billing_slab["tradeType"] is not None:
-            licence_type = billing_slab["licenseType"]
-            structure_type, structure_sub_type = billing_slab["structureType"].split('.')
-            trade_category, trade_type, trade_sub_type_code = billing_slab["tradeType"].split('.')
-            charge = billing_slab["rate"]
-            uom_unit = billing_slab["uom"]
-            uom_from = billing_slab["fromUom"]
-            uom_to = billing_slab["toUom"]
-            trade_type_code=get_trade_code(billing_slab["tradeType"])
+            trade_map[billing_slab["tradeType"]].append(billing_slab)
+        elif billing_slab["accessoryCategory"] is not None:
+            acc_map[billing_slab["accessoryCategory"]].append(billing_slab)
 
+    row_trade = 1
+    row_acc = 1
 
+    for code, slabs in trade_map.items():
+        if len(slabs) > 0:
+            for slab in slabs:
+                licence_type = slab["licenseType"]
+                structure_type, structure_sub_type = slab["structureType"].split('.')
+                trade_category, trade_type, trade_sub_type_code = slab["tradeType"].split('.')
+                charge = slab["rate"]
+                uom_unit = slab["uom"]
+                uom_from = slab["fromUom"]
+                uom_to = slab["toUom"]
+                trade_type_code = get_trade_code(slab["tradeType"])
 
-            trade_sub_type_name = localization_map[trade_type_code]
+                trade_sub_type_name = localization_map.get(trade_type_code) or ""
 
+                trades.write(row_trade, 0, row_trade)
+                trades.write(row_trade, 1, licence_type)
+                trades.write(row_trade, 2, structure_type)
+                trades.write(row_trade, 3, structure_sub_type)
+                trades.write(row_trade, 4, trade_category)
+                trades.write(row_trade, 5, trade_type)
+                trades.write(row_trade, 6, trade_sub_type_code)
+                trades.write(row_trade, 7, trade_sub_type_name)
+                trades.write(row_trade, 8, charge)
+                trades.write(row_trade, 9, uom_unit)
+                trades.write(row_trade, 10, uom_from)
+                trades.write(row_trade, 11, uom_to)
+                row_trade = row_trade + 1
+        else:
 
+            trade_category, trade_type, trade_sub_type_code = code.split('.')
+            trade_sub_type_name = localization_map.get(get_trade_code(code)) or ""
             trades.write(row_trade, 0, row_trade)
-            trades.write(row_trade, 1, licence_type)
-            trades.write(row_trade, 2, structure_type)
-            trades.write(row_trade, 3, structure_sub_type)
+
             trades.write(row_trade, 4, trade_category)
             trades.write(row_trade, 5, trade_type)
             trades.write(row_trade, 6, trade_sub_type_code)
             trades.write(row_trade, 7, trade_sub_type_name)
-            trades.write(row_trade, 8, charge)
-            trades.write(row_trade, 9, uom_unit)
-            trades.write(row_trade, 10, uom_from)
-            trades.write(row_trade, 11, uom_to)
+
             row_trade = row_trade + 1
 
-        if billing_slab["accessoryCategory"] is not None:
-            accessory_category_code= billing_slab["accessoryCategory"]
-            charge = billing_slab["rate"]
-            uom_unit = billing_slab["uom"]
-            uom_from = billing_slab["fromUom"]
-            uom_to = billing_slab["toUom"]
+    for code, slabs in acc_map.items():
+        if len(slabs) > 0:
+            for slab in slabs:
+                accessory_category_code = slab["accessoryCategory"]
+                charge = slab["rate"]
+                uom_unit = slab["uom"]
+                uom_from = slab["fromUom"]
+                uom_to = slab["toUom"]
 
-            accessories_name = localization_map[get_trade_acc_code(billing_slab["accessoryCategory"])]
+                accessories_name = localization_map.get(get_trade_acc_code(slab["accessoryCategory"])) or ""
 
+                accessories.write(row_acc, 0, row_acc)
+                accessories.write(row_acc, 1, accessory_category_code)
+                accessories.write(row_acc, 2, accessories_name)
+                accessories.write(row_acc, 3, charge)
+                accessories.write(row_acc, 4, uom_unit)
+                accessories.write(row_acc, 5, uom_from)
+                accessories.write(row_acc, 6, uom_to)
+                row_acc = row_acc + 1
+        else:
             accessories.write(row_acc, 0, row_acc)
+            accessories_name = localization_map.get(get_trade_acc_code(slab["accessoryCategory"])) or ""
+            accessories.write(row_acc, 1, code)
             accessories.write(row_acc, 2, accessories_name)
-            accessories.write(row_acc, 1, accessory_category_code)
-            accessories.write(row_acc, 3, charge)
-            accessories.write(row_acc, 4, uom_unit)
-            accessories.write(row_acc, 5, uom_from)
-            accessories.write(row_acc, 6, uom_to)
             row_acc = row_acc + 1
 
     file_name = "tl_billing_slab.xls"
