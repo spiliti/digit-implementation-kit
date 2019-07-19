@@ -35,6 +35,8 @@ def search_mdms_data(tenant_id, auth_token):
             }
         ]
     })
+
+
 def uom_mdms_data(tenant_id, auth_token):
     uom_data = search_mdms_data(tenant_id, auth_token)["MdmsRes"]["common-masters"]["UOM"]
     uom_mdms_code = []
@@ -42,7 +44,8 @@ def uom_mdms_data(tenant_id, auth_token):
         prefix_uom_for_code = "COMMON_MASTER_UOM_"
         uom_code = prefix_uom_for_code + a["code"]
         uom_mdms_code.append(uom_code)
-    return  uom_mdms_code
+    return uom_mdms_code
+
 
 def acc_mdms_data(tenant_id, auth_token):
     trade_license_data = search_mdms_data(tenant_id, auth_token)["MdmsRes"]["TradeLicense"]["AccessoriesCategory"]
@@ -120,12 +123,11 @@ def localization_mapping(tenant_id, auth_token, locale):
     localization_tl_data = search_localization(tenant_id, auth_token, 'rainmaker-tl', locale)["messages"]
     data = localization_common_data + localization_tl_data
 
+    rows = mapping_file('/Users/deependra/Downloads/test_file_copy.xlsx')
 
-    rows = mapping_file('/Users/deependra/Downloads/Trade_and_Accessories_final_sheet_nabha.xlsx')
-
-    uom_mdms_codes=uom_mdms_data(tenant_id,auth_token)
-    trade_license_acc_code= acc_mdms_data(tenant_id,auth_token)
-    trade_type_code=type_mdms_data(tenant_id,auth_token)
+    uom_mdms_codes = uom_mdms_data(tenant_id, auth_token)
+    trade_license_acc_code = acc_mdms_data(tenant_id, auth_token)
+    trade_type_code = type_mdms_data(tenant_id, auth_token)
 
     message_to_code_map_uom = {}
     message_to_code_map_acc = {}
@@ -159,9 +161,6 @@ def localization_mapping(tenant_id, auth_token, locale):
         message_to_code_map[message] = message_to_code_map.get(message, set())
         message_to_code_map[message].add(code)
 
-
-    print(message_to_code_map[rows[1]["License Type"]])
-
     for i in range(len(rows)):
         for j in message_to_code_map_type:
             if rows[i]["Trade Sub-Type"] in message_to_code_map_type:
@@ -169,23 +168,21 @@ def localization_mapping(tenant_id, auth_token, locale):
                 # print(message_to_code_map_type.get(rows[i]["Trade Sub-Type"]))
                 break
 
-        tradetype=message_to_code_map_type.get(rows[i]["Trade Sub-Type"])
-
+        tradetype = message_to_code_map_type.get(rows[i]["Trade Sub-Type"])
 
         messqge_to_code = message_to_code_map[rows[i]["License Type"]]
         license_type_col = prefix_replace(messqge_to_code, 'TRADELICENSE_LICENSETYPE_')
 
-
         messqge_to_code = message_to_code_map[rows[i]["Structure sub type"]]
         structure_type = prefix_replace(messqge_to_code, 'COMMON_MASTERS_STRUCTURETYPE_')
-        print(i)
 
         k = i + 1
         write_sheet.write(k, 2, license_type_col)
         write_sheet.write(k, 3, structure_type)
         write_sheet.write(k, 4, tradetype)
+        write_sheet.write(k, 6, 'FLAT')
 
-    row = mapping_file_sheet('/Users/deependra/Downloads/Trade_and_Accessories_final_sheet_nabha.xlsx')
+    row = mapping_file_sheet('/Users/deependra/Downloads/test_file_copy.xlsx')
 
     for n in range(len(row)):
         for l in message_to_code_map_acc:
@@ -193,12 +190,12 @@ def localization_mapping(tenant_id, auth_token, locale):
                 # print(row[i]["Accessories Name"])
                 # print(message_to_code_map_acc.get(row[i]["Accessories Name"]))
                 break
-        accessories_name=message_to_code_map_acc.get(row[n]["Accessories Name"])
-        #print(accessories_name)
-        k=k+1
+        accessories_name = message_to_code_map_acc.get(row[n]["Accessories Name"])
+        # print(accessories_name)
+        k = k + 1
         write_sheet.write(k, 2, license_type_col)
         write_sheet.write(k, 5, accessories_name)
-
+        write_sheet.write(k, 6, 'FLAT')
 
     wb_write_tenant_data.save('xlwt new_data.xls')
 
@@ -216,5 +213,4 @@ if __name__ == "__main__":
     tenant_id = 'pb'
     locale = 'en_IN'
 
-    localization_mapping(tenant_id, auth_token,locale)
-
+    localization_mapping(tenant_id, auth_token, locale)

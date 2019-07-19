@@ -664,3 +664,8 @@ def upsert_localization(auth_token, body):
     body["RequestInfo"]["authToken"] = auth_token
     data = requests.post(url=config.HOST + '/localization/messages/v1/_upsert', json=body)
     return data.json()
+
+def search_localization(auth_token, body):
+    body["RequestInfo"]["authToken"] = auth_token
+    data = requests.post(url=config.HOST + '/localization/messages/v1/_search', json=body)
+    return data.json()
