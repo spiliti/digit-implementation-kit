@@ -211,7 +211,7 @@ class IkonProperty(Property):
 
             if self.property_details[0].citizen_info is None:
                 self.property_details[0].citizen_info = CitizenInfo(name=
-                                                                    re.sub("-",name), mobile_number=mobile)
+                                                                    name, mobile_number=mobile)
 
     def process_floor_information(self, context):
         floors = context["floor"].strip()
@@ -283,6 +283,7 @@ class IkonProperty(Property):
         self.process_usage(context)
         self.process_floor_information(context)
         self.correct_mobile_number(context)
+        self.correct_data_specific_issue(context)
         self.tenant_id = tenantid
         pass
 
@@ -400,6 +401,25 @@ class IkonProperty(Property):
                 or ci.mobile_number[:1] not in ["6", "7", "8", "9"]:
                 ci.mobile_number = "9999999999"
 
+        ci.name = pattern.sub("-", ci.name)
+
+    def correct_data_specific_issue(self, context):
+        pd = self.property_details[0]
+        if len(pd.units) > 0:
+            unique_property_type = set([unit.usage_category_major for unit in pd.units])
+
+            if len(pd.property_type) == 1:
+                pd.property_type = unique_property_type[0]
+            elif len(pd.property_type) > 1:
+                pd.property_type = "MIXED"
+
+
+            for unit in pd.units:
+                if not unit.floor_no:
+                    unit.floor_no = "0"
+
+
+
 
 class PropertyTaxParser():
     def create_property_object(self, auth_token):
@@ -465,7 +485,7 @@ def parse_flat_information(text):
             info = None
             break
 
-    if info:
+    if info and len(info) == 6:
         floors.append(info)
 
     return floors
