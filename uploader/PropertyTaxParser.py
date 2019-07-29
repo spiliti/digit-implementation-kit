@@ -406,12 +406,15 @@ class IkonProperty(Property):
     def correct_data_specific_issue(self, context):
         pd = self.property_details[0]
         if len(pd.units) > 0:
+            pd.property_type = "BUILTUP"
+
             unique_property_type = set([unit.usage_category_major for unit in pd.units])
 
             if len(pd.property_type) == 1:
-                pd.property_type = unique_property_type[0]
+                pd.usage_category_major = unique_property_type[0]
+
             elif len(pd.property_type) > 1:
-                pd.property_type = "MIXED"
+                pd.usage_category_major = "MIXED"
 
 
             for unit in pd.units:
