@@ -163,46 +163,74 @@ def validate_boundary_data(auth_token, boundary_data, boundary_type, duplicate_c
     if not tenant_boundary:
         return errors
 
-    locality_map = {}
+    locality_code_map = {}
+    locality_name_map = {}
+
     for zone in tenant_boundary["children"]:
         for wardOrBlock in zone["children"]:
             for locality in wardOrBlock["children"]:
-                locality_map[locality["code"]] = locality_map.get(locality["code"], 0) + 1
-
-    if duplicate_check:
-        for locality_code, count in locality_map.items():
-            if count > 1:
-                errors.append("Duplicate Locality Code \"{}\" Repeated for \"{}\" times".format(locality_code, count))
+                locality_code_map[locality["code"]] = locality_code_map.get(locality["code"], 0) + 1
+                locality_name_map[locality["name"]] = locality_name_map.get(locality["name"], []) + [
+                    locality["code"]] + [zone["name"]] + [wardOrBlock["name"]]
 
     if used_boundary_codes_check:
-        if boundary_type == "REVENUE":
-            URL = config.URL_SEARCH_LOCALITIES_USED_IN_REVENUE
-        elif boundary_type == "ADMIN":
-            URL = config.URL_SEARCH_LOCALITIES_USED_IN_ADMIN
-
-        tenant_id = boundary_data["tenantId"]
-
-        resp = requests.post(URL, data=json.dumps({
-            "RequestInfo": {
-                "authToken": auth_token
-            },
-            "searchCriteria": {
-                "tenantId": tenant_id
-            }
-        }), headers={'Content-Type': 'application/json'})
-
-        localities_used = resp.json()["services"]
-        localities_in_use = []
-        for locality in localities_used:
-            localities_in_use.append(locality["locality"])
-
-        missing_boundary_codes = list(set(localities_in_use) - set(locality_map.keys()))
+        localities_in_use = get_used_localities(auth_token, boundary_data, boundary_type)
+        missing_boundary_codes = list(set(localities_in_use) - set(locality_code_map.keys()))
         for locality in missing_boundary_codes:
             errors.append(
                 "Boundary code \"{}\" is used by existing properties and not present in current boundary".format(
                     locality))
 
+    if duplicate_check:
+        for locality_code, count in locality_code_map.items():
+            if count > 1:
+                errors.append("Duplicate Locality Code \"{}\" Repeated for \"{}\" times".format(locality_code, count))
+
+        for locality_name, zone_n_block in locality_name_map.items():
+            if len(zone_n_block) > 3:
+                # As we are adding locality code, zone name, ward name locality name against locality name
+                # So, each locality name contains atleast 3 data in the list.
+                # If size of list is more that 3 then locality name is repeated for multiple times
+                errors.append("\n\nDuplicate Locality Name")
+                errors.append("\tName : {}".format(locality_name))
+                errors.append("\tZone : {}".format(zone_n_block[1]))
+                errors.append("\tWard/Block : {}".format(zone_n_block[2]))
+
+                # Getting all the locality code from "zone_n_block" list
+                same_name_locality_code = [zone_n_block[i] for i in range(0, len(zone_n_block)) if i % 3 == 0]
+                errors.append("\n\tRepetition : {}".format(len(same_name_locality_code)))
+                for loc_code in same_name_locality_code:
+                    if loc_code in localities_in_use:
+                        errors.append("\t\t{} : {}".format(loc_code, "USED"))
+                    else:
+                        errors.append("\t\t{} : {}".format(loc_code, "NOT USED"))
+
     return errors
+
+
+def get_used_localities(auth_token, boundary_data, boundary_type):
+    if boundary_type == "REVENUE":
+        URL = config.URL_SEARCH_LOCALITIES_USED_IN_REVENUE
+    elif boundary_type == "ADMIN":
+        URL = config.URL_SEARCH_LOCALITIES_USED_IN_ADMIN
+
+    tenant_id = boundary_data["tenantId"]
+
+    resp = requests.post(URL, data=json.dumps({
+        "RequestInfo": {
+            "authToken": auth_token
+        },
+        "searchCriteria": {
+            "tenantId": tenant_id
+        }
+    }), headers={'Content-Type': 'application/json'})
+
+    localities_used = resp.json()["services"]
+    localities_in_use = []
+    for locality in localities_used:
+        localities_in_use.append(locality["locality"])
+
+    return localities_in_use
 
 
 def create_boundary(config_function, boundary_type):
@@ -391,9 +419,12 @@ def create_boundary(config_function, boundary_type):
                 else:
                     existing_boundary_data["TenantBoundary"][1] = new_boundary_data
                 print("Boundary already exists. Overwriting")
+                print("File Path : ", boundary_path, "boundary-data.json")
+
         else:
             # the file doesn't exists already, so we can safely generate current boundary
             print("Boundary didn't exist. Creating one")
+            print("File Path : ", boundary_path + "boundary-data.json")
             existing_boundary_data = final_data
 
         with open(boundary_path / "boundary-data.json", "w") as f:
