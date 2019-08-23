@@ -64,9 +64,9 @@ def download_billing_slab(auth_token):
 
     localization_map = get_billing_slab_localization(auth_token)
 
-    acc_map = get_accessories_from_mdms( auth_token)
+    acc_map = get_accessories_from_mdms(auth_token)
 
-    trade_map = get_trade_type_from_mdms( auth_token)
+    trade_map = get_trade_type_from_mdms(auth_token)
 
     for billing_slab in billing_slabs:
         if billing_slab["tradeType"] is not None:

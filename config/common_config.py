@@ -145,4 +145,35 @@ def load_revenue_boundary_config():
     config.COLUMN_LOCALITY_AREA = "Area Name"
 
 
+def load_new_revenue_boundary_config():
+    config.SHEET_LOCALITY = "RevenueBoundary"
+
+    config.COLUMN_ZONE_CODE = "Rev Zone Code"
+    config.COLUMN_ZONE_NAME = "Rev Zone Name"
+
+    config.COLUMN_WARD_CODE = "Rev Block/Ward Code"
+    config.COLUMN_WARD_NAME = "Rev Block/Ward Name"
+
+    config.COLUMN_LOCALITY_CODE = "Locality Code"
+    config.COLUMN_LOCALITY_NAME = "Locality Name"
+    config.COLUMN_LOCALITY_AREA = "Area Name"
+
+def load_tl_billing_slab_download_config():
+    config.SHEET_TRADES ="Trades"
+    config.SHEET_ACCESSORIES="Accessories item"
+
+    config.TRADE_COLUMN_LICENSE_TYPE="License type"
+    config.TRADE_COLUMN_STRUCTURE_TYPE="Structure Type"
+    config.TRADE_COLUMN_STRUCTURE_SUB_TYPE="Structure sub type"
+    config.TRADE_COLUMN_TRADE_CATEGORY="Trade Category"
+    config.TRADE_COLUMN_TRADE_TYPE="Trade Type"
+    config.TRADE_COLUMN_TRADE_SUB_TYPE="Trade Sub-Type"
+    config.TRADE_COLUMN_CHARGE="Charge"
+    config.TRADE_COLUMN_UOM_UNIT="UOM Unit"
+    config.TRADE_COLUMN_UOM_FROM="UOM From"
+    config.TRADE_COLUMN_UOM_TO = "UOM To"
+
+
+
+
 load_config()
