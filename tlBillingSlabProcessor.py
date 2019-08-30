@@ -66,7 +66,7 @@ def get_slab_id(slab):
 
 
 tenants = [
-    "pb.moga"
+    "pb.mohali"
 ]
 
 import os
@@ -106,7 +106,7 @@ for tenant in tenants:
                "fromuom",
                "touom", "rate", "createdtime", "createdby", "lastmodifiedtime", "lastmodifiedby"]
     fields = {field: index for index, field in enumerate([])}
-
+    count=0
     new_slabs = {}
     update_slabs = {}
     slabs_processed = set()
@@ -118,7 +118,8 @@ for tenant in tenants:
             print("Problem detected, duplicate slab id " + slab_id)
 
         slabs_processed.add(slab_id)
-
+        count = count + 1
+        print(count)
         if slab_id not in existing_slab_data:
             if type(row_data["rate"]) is str:
                 row_data["rate"] = row_data["rate"].strip()

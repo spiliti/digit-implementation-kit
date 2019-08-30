@@ -1,5 +1,7 @@
 from common import superuser_login
-from uploader_tl_billing_slab import create_and_update_billing_slab
+
+from tl_billing_slab_service import create_and_update_billing_slab
+
 
 tenants = [
     "pb.testing"
