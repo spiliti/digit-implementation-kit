@@ -708,21 +708,59 @@ def mdms_call(auth_token, module_name, master_details):
     request_body["RequestInfo"] = {"authToken": auth_token}
     request_body["MdmsCriteria"] = {"tenantId": "pb", "moduleDetails": [
         {"moduleName": module_name, "masterDetails": [{"name": master_details}]}]}
-    parms = {"tenantId": "pb"}
-    return requests.post(url, params=parms, json=request_body).json()
+    params = {"tenantId": "pb"}
+    return requests.post(url, params=params, json=request_body).json()
 
 
 def search_localization(auth_token, module_name, locale, tenant_id=config.TENANT_ID):
     url = urljoin(config.HOST, '/localization/messages/v1/_search')
     request_body = {}
     request_body["RequestInfo"] = {"authToken": auth_token}
-    parms = {"tenantId": tenant_id, "module": module_name, "locale": locale}
-    return requests.post(url, params=parms, json=request_body).json()
+    params = {"tenantId": tenant_id, "module": module_name, "locale": locale}
+    return requests.post(url, params=params, json=request_body).json()
 
 
 def search_tl_billing_slab(auth_token, tenant_id=config.TENANT_ID):
     url = urljoin(config.HOST, '/tl-calculator/billingslab/_search')
     request_body = {}
     request_body["RequestInfo"] = {"authToken": auth_token}
-    parms = {"tenantId": tenant_id}
-    return requests.post(url, params=parms, json=request_body).json()
+    params = {"tenantId": tenant_id}
+    return requests.post(url, params=params, json=request_body).json()
+
+
+def cancel_property(auth_token, tenant_id, property_id, assessment_numbers=None, action="CANCEL_PROPERTY", status="INACTIVE"):
+    url = urljoin(config.HOST, '/pt-services-v2/property/_cancel')
+    request_body = {}
+    request_body["RequestInfo"] = {"authToken": auth_token}
+    params = {
+        "tenantId": tenant_id,
+        "propertyId": property_id,
+        "assessmentNumbers": assessment_numbers,
+        "action": action,
+        "status": status
+    }
+    return requests.post(url, params=params, json=request_body).json()
+
+
+def update_property_status(auth_token, properties, status="INACTIVE"):
+    for property_id, tenant_id in properties:
+        if status == "INACTIVE":
+            # search_property()
+            # get all consumer codes
+            # search receipt for all these consumer codes
+            # if there is receipt, throw error that there is a active receipt and
+            # property cannot be de-activate
+            pass
+
+        # cancel_property, cancel the property
+
+
+def cleanup_property(auth_token, properties):
+    for property_id, tenant_id in properties:
+        # search_property()
+        # get all consumer codes
+        # search receipt for all these consumer codes
+        # get all consumer codes for which receipts are not there
+        # cancel_property, cancel the all the assessments where no receipt was there
+        assessment_numbers = "????"
+        cancel_property(auth_token, tenant_id, property_id, assessment_numbers, action="CANCEL_ASSESSMENT")
