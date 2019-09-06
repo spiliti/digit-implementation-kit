@@ -1,4 +1,3 @@
-from config import config
 from common import superuser_login, update_property_status
 
 properties = (
