@@ -728,7 +728,8 @@ def search_tl_billing_slab(auth_token, tenant_id=config.TENANT_ID):
     return requests.post(url, params=params, json=request_body).json()
 
 
-def cancel_property(auth_token, tenant_id, property_id, assessment_numbers=None, action="CANCEL_PROPERTY", status="INACTIVE"):
+def cancel_property(auth_token, tenant_id, property_id, assessment_numbers=None, action="CANCEL_PROPERTY",
+                    status="INACTIVE"):
     url = urljoin(config.HOST, '/pt-services-v2/property/_cancel')
     request_body = {}
     request_body["RequestInfo"] = {"authToken": auth_token}
@@ -745,22 +746,54 @@ def cancel_property(auth_token, tenant_id, property_id, assessment_numbers=None,
 def update_property_status(auth_token, properties, status="INACTIVE"):
     for property_id, tenant_id in properties:
         if status == "INACTIVE":
-            # search_property()
-            # get all consumer codes
-            # search receipt for all these consumer codes
-            # if there is receipt, throw error that there is a active receipt and
-            # property cannot be de-activate
-            pass
+            search_properties = search_property(auth_token, tenant_id, property_id)["Properties"]
 
-        # cancel_property, cancel the property
+            if len(search_properties) > 0:
+                consumer_codes = list(map(lambda pd: property_id + ':' + pd["assessmentNumber"], search_properties[0]["propertyDetails"]))
+
+                receipts = search_receipt(auth_token, None, tenant_id, ','.join(consumer_codes))["Receipt"]
+
+                if len(receipts) > 0:
+                    print(
+                        "there is a active receipt {} property cannot be de-activated. Please cancel all receipts first".format(
+                            property_id))
+                    continue
+            else:
+                print("Property {} not found".format(property_id))
+
+        cancel_property(auth_token, tenant_id, property_id, status=status)
 
 
 def cleanup_property(auth_token, properties):
     for property_id, tenant_id in properties:
-        # search_property()
-        # get all consumer codes
-        # search receipt for all these consumer codes
-        # get all consumer codes for which receipts are not there
-        # cancel_property, cancel the all the assessments where no receipt was there
-        assessment_numbers = "????"
-        cancel_property(auth_token, tenant_id, property_id, assessment_numbers, action="CANCEL_ASSESSMENT")
+        search_properties = search_property(auth_token, tenant_id, property_id)["Properties"]
+
+        if len(search_properties) > 0:
+            consumer_codes = list(map(lambda pd: property_id + ':' + pd["assessmentNumber"],
+                                 sorted(search_properties[0]["propertyDetails"], key=lambda p: p["assessmentDate"])))
+
+            receipts = search_receipt(auth_token, None, tenant_id, ','.join(consumer_codes))["Receipt"]
+
+            consumer_codes_with_receipts = list(map(lambda r: r['consumerCode'], receipts))
+
+            if len(consumer_codes_with_receipts) == 0:
+                # We have no receipts, so only assessment we want to keep is the first one
+                consumer_codes_to_inactivate = consumer_codes[1:]
+            else:
+                consumer_codes_to_inactivate = list(filter(lambda code: code not in consumer_codes_with_receipts, consumer_codes))
+
+            if len(consumer_codes_to_inactivate) > 0:
+                assessment_numbers = list(map(lambda code: code.split(":")[1], consumer_codes_to_inactivate))
+                cancel_property(auth_token, tenant_id, property_id, ','.join(assessment_numbers),
+                                action="CANCEL_ASSESSMENT")
+            else:
+                print("No unpaid assessments found for {}".format(property_id))
+        else:
+            print("Property {} not found".format(property_id))
+
+
+        #
+        # # get all consumer codes for which receipts are not there
+        # # cancel_property, cancel the all the assessments where no receipt was there
+        # assessment_numbers = "????"
+        # cancel_property(auth_token, tenant_id, property_id, assessment_numbers, action="CANCEL_ASSESSMENT")
