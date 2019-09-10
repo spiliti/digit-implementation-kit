@@ -15,7 +15,7 @@ The parsing is done mainly in `uploader/parsers/ikon.py`. The upload process sto
 
 Setup a DB and create a table based on city you are migrating. Here we will take example as Jalandhar
 
-```postgres-sql
+```pgsql
 CREATE DATABASE legacy_data;
 CREATE USER legacy with encrypted password '<PASSWORD>';
 GRANT all privileges on database legacy_data to legacy;
@@ -115,7 +115,7 @@ VACUUM FULL jalandhar_pt_legacy_data;
 REINDEX TABLE jalandhar_pt_legacy_data;
 ```
 
-We have created two tables `jalandhar_pt_legacy_data` (pld) and `jalandhar_boundary_data` (bd). 
+We have created two tables `jalandhar_pt_legacy_data` (pld) and `jalandhar_boundary_data` (bd). We will be using `pld` and `bd` as shortcuts for these tables in the document moving forward
 
 The fields in `pld` till `remarks` are for storing the data received in the CSV dumps from Ikons. The fields aftewards are used by the uploader script to manage state and status of the application. The `bd` table used to do mapping of old colony versus new boundary data in `RM` 
 
@@ -139,8 +139,121 @@ returnid,previous_returnid,acknowledgementno,entrydate,zone,sector,colony,housen
 
 If columns are not in this order, reorder them. After that import all the data into the DB using below command
 
-```postgres-sql
+```pgsql
 COPY jalandhar_pt_legacy_data(returnid,previous_returnid,acknowledgementno,entrydate,zone,sector,colony,houseno,owner,floor,exemptioncategory,landusedtype,usage,plotarea,totalcoveredarea,grosstax,firecharges,interestamt,penalty,rebate,exemptionamt,taxamt,paymentmode,transactionid,g8bookno,g8receiptno,paymentdate,propertytype,session,buildingcategory)
 FROM '/tmp/combined.csv'
 WITH (format csv, QUOTE '"', header);
 ```
+
+Now that the data is imported, we want to be able to identify each record using a unique identifier, so we assign a `uuid` to each record
+
+```pgsql
+update jalandhar_pt_legacy_data set uuid = uuid_generate_v4();
+
+update jalandhar_pt_legacy_data set 
+new_propertyid = NULL, upload_status = NULL, receipt_status = NULL, receipt_number = NUll, receipt_request = null, receipt_response = null, req_json = Null, parent_uuid = Null, upload_response = null;
+```
+
+We also map the `uuid` to `parent_uuid` for matching the `previous_returnid` using below queries
+
+```PGSQL
+update jalandhar_pt_legacy_data as pt1 set parent_uuid = ( select uuid from pt_legacy_data pt2 
+where pt2.ReturnId = pt1.previous_returnid and Session = '2013-2014'
+)
+where Session = '2014-2015';
+
+update jalandhar_pt_legacy_data as pt1 set parent_uuid = ( select uuid from pt_legacy_data pt2 
+where pt2.ReturnId = pt1.previous_returnid and Session = '2014-2015'
+)
+where Session = '2015-2016';
+
+update jalandhar_pt_legacy_data as pt1 set parent_uuid = ( select uuid from pt_legacy_data pt2 
+where pt2.ReturnId = pt1.previous_returnid and Session = '2015-2016'
+)
+where Session = '2016-2017';
+
+update jalandhar_pt_legacy_data as pt1 set parent_uuid = ( select uuid from pt_legacy_data pt2 
+where pt2.ReturnId = pt1.previous_returnid and Session = '2016-2017'
+)
+where Session = '2017-2018';
+
+update jalandhar_pt_legacy_data as pt1 set parent_uuid = ( select uuid from pt_legacy_data pt2 
+where pt2.ReturnId = pt1.previous_returnid and Session = '2017-2018'
+)
+where Session = '2018-2019';
+
+update jalandhar_pt_legacy_data as pt1 set parent_uuid = ( select uuid from pt_legacy_data pt2 
+where pt2.ReturnId = pt1.previous_returnid and Session = '2018-2019'
+)
+where Session = '2019-2020';
+```
+
+#### Mapping the colonies to RM
+
+Make sure the boundary has a `UNKNOWN` code, so that colonies which are not mapped can be moved to `UNKNOWN` code 
+
+Run the `revenue_boundary_gen_download.py` to download the boundary data for the given tenant.
+
+Upload the 
+`Rev Block/ward code` (sector), `Locality name` (colony),	`Locality Code` (code), `Area name` (area) fields to `bd` table
+
+Now update the localities in DB
+
+```PGSQL
+update jalandhar_pt_legacy_data set colony_processed = regexp_replace(regexp_replace(trim(upper(colony)),'[^a-zA-Z0-9]+', ' ','g'),'\s+', ' ')
+
+
+update jalandhar_boundary set colony_processed = regexp_replace(regexp_replace(trim(upper(colony)),'[^a-zA-Z0-9]+', ' ','g'),'\s+', ' ')
+
+update jalandhar_pt_legacy_data as pt1 set new_locality_code = (
+	select code from jalandhar_boundary jb where  jb.colony_processed = pt1.colony_processed and  jb.sector = pt1.sector
+)
+where new_locality_code isnull;
+
+update jalandhar_pt_legacy_data as pt1 set new_locality_code = (
+	select code from jalandhar_boundary jb where  pt1.colony_processed=jb.colony_processed  limit 1
+)
+where new_locality_code isnull;
+
+update jalandhar_pt_legacy_data set new_locality_code = 'UNKNOWN' where new_locality_code isnull;
+
+update jalandhar_pt_legacy_data set new_locality_code = 'UNKNOWN' where new_locality_code isnull and parent_uuid isnull;
+```
+
+#### Marking which data doesn't need to uploaded
+
+Since we are getting transaction data from `ikon`, we will only need to upload property with latest details from the latest receipt. So a record which exist in all years (`2013-14` to `2019-20`), will only be processed in `2019-20`.
+
+To do this we run the below query
+
+```pgsql
+update jalandhar_pt_legacy_data pd set upload_status = 'WONT_UPLOAD'
+where
+pd.upload_status is NULL and
+pd.new_locality_code is not null
+and exists (
+    select uuid from jalandhar_pt_legacy_data as pt2
+        where pt2.previous_returnid = pd.returnid
+            and pt2.session = CONCAT(split_part(pd.session, '-',2), '-', (split_part(pd.session, '-',2)::int + 1)::text)
+```
+
+Now we are ready to upload the complete data
+
+
+### Uploading the Ikon data
+
+Clone the implementation kit repo. You need `python3` and `pip3` to use the kit
+
+Run the below commands to install all the required packages
+
+```PGSQL
+pip3 install -r requirements.txt
+```
+
+In the DB assign the batch id to each record (assumed 10 in this case)
+
+```PGSQL
+update jalandhar_pt_legacy_data set batchname =('{1,2,3,4,5,6,7,8,9,10}'::text[])[ceil(random()*10)] where upload_status is null;
+```
+
+After installing all the requirements, update the `run_pt_upload.sh`, use first with `DRY_RUN=True`, once the upload starts working use `DRY_RUN=False`  and use `BATCH_PARALLEL` to increase the number of parallel jobs 
