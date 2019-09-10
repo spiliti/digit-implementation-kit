@@ -12,7 +12,7 @@ export BATCH_SIZE=100
 export BATCH_PARALLEL=1
 # If True this will only create one record and exist
 # This should be used when testing the whole setup
-export DRY_RUN=False
+export DRY_RUN=True
 
 export CITY="<Update City Name>"
 
