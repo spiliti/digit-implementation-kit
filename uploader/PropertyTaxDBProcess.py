@@ -2,12 +2,13 @@ import psycopg2
 import json
 import os
 from common import superuser_login
-from uploader.PropertyTaxParser import IkonProperty
+from uploader.parsers.ikon import IkonProperty
 
 dbname = os.getenv("DB_NAME", "postgres")
 dbuser = os.getenv("DB_USER", "postgres")
 dbpassword = os.getenv("DB_PASSWORD", "postgres")
 tenant = os.getenv("TENANT", "pb.jalandhar")
+city = os.getenv("CITY", "JALANDHAR")
 host = os.getenv("DB_HOST", "localhost")
 batch = os.getenv("BATCH_NAME", "")
 table_name = os.getenv("TABLE_NAME", "pt_legacy_data")
@@ -62,7 +63,7 @@ def main():
             print('Processing {}'.format(uuid))
             try:
                 p = IkonProperty()
-                p.process_record(json_data, tenant)
+                p.process_record(json_data, tenant, city)
                 pd = p.property_details[0]
                 # pd.financial_year = "2018-19"
                 # p.tenant_id = tenant
