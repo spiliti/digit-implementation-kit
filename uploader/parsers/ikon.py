@@ -1,142 +1,10 @@
-import json
-from urllib.parse import urlparse, urljoin
-
-import requests
-
-from config import config
-
-from common import open_excel_file, superuser_login
-from uploader.PropertyTax import RequestInfo, Property, PropertyDetail, Owner, CitizenInfo, Unit, \
-    Address, Locality, Institution, PropertyCreateRequest
 import re
 
-FLOOR_MAP = {
-    "Upper Ground Floor": "0",
-    "Other Floor": "0",
-    "Lower Ground Floor": "-1",
-    "Ground Floor - Vacant": "0",
-    "Ground Floor - Vacant - Vacant": "0",
-    "Ground Floor - Vacant In Use": "0",
-    "Ground Floor": "0",
-    "Basement 2": "-2",
-    "Basement 1": "-1",
-    "Basement 3": "-3",
-    "25th Floor": "25",
-    "24th Floor": "24",
-    "23th Floor": "23",
-    "22th Floor": "22",
-    "21th Floor": "21",
-    "20th Floor": "20",
-    "19th Floor": "19",
-    "18th Floor": "18",
-    "17th Floor": "17",
-    "16th Floor": "16",
-    "15th Floor": "15",
-    "14th Floor": "14",
-    "13th Floor": "13",
-    "12th Floor": "12",
-    "11th Floor": "11",
-    "10th Floor": "10",
-    "9th Floor": "9",
-    "8th Floor": "8",
-    "7th Floor": "7",
-    "6th Floor": "6",
-    "5th Floor": "5",
-    "4th Floor": "4",
-    "3rd Floor": "3",
-    "2nd Floor": "2",
-    "1st Floor": "1",
-}
+from uploader.PropertyTax import *
 
-def get_floor_number(floor: str):
-    if floor in FLOOR_MAP:
-        return FLOOR_MAP[floor]
+from uploader.parsers.utils import *
 
-    if "GROUND" in floor.upper():
-        return "0"
-    elif " 1ST" in floor:
-        return "1"
-    elif " 2ND" in floor:
-        return "2"
-
-
-OC_MAP = {
-    "Self Occupied": "SELFOCCUPIED",
-    "Un-Productive": "UNOCCUPIED",
-    "Rented": "RENTED",
-    "Vacant AreaLand": "UNOCCUPIED"
-}
-
-from json import JSONEncoder
-
-
-class PropertyEncoder(JSONEncoder):
-    def default(self, o):
-        return o.__dict__
-
-
-def convert_json(d, convert):
-    new_d = {}
-    for k, v in d.items():
-        if isinstance(v, list):
-            new_d[convert(k)] = []
-            for i, vv in enumerate(v):
-                new_d[convert(k)].append(convert_json(v[i], convert))
-        else:
-            new_d[convert(k)] = convert_json(v, convert) if isinstance(v, dict) else v
-    return new_d
-
-
-camel_pat = re.compile(r'([A-Z])')
-under_pat = re.compile(r'_([a-z])')
-
-
-def camel_to_underscore(name):
-    return camel_pat.sub(lambda x: '_' + x.group(1).lower(), name)
-
-
-def underscore_to_camel(name):
-    return under_pat.sub(lambda x: x.group(1).upper(), name)
-
-
-def convert_load(*args, **kwargs):
-    json_obj = json.load(*args, **kwargs)
-    return convert_json(json_obj, camel_to_underscore)
-
-
-def convert_dump(*args, **kwargs):
-    args = (convert_json(args[0], underscore_to_camel),) + args[1:]
-    json.dump(*args, **kwargs)
-
-
-BD_UNIT_MAP = {
-    "Residential Houses": (None, None, None),
-    # "Government buildings, including buildings of Government Undertakings, Board or Corporation": "",
-    "Industrial (any manufacturing unit), educational institutions, and godowns": (
-    "INDUSTRIAL", "OTHERINDUSTRIALSUBMINOR", "OTHERINDUSTRIAL"),
-    "Commercial buildings including Restaurants (except multiplexes, malls, marriage palaces)": (
-    "COMMERCIAL", "OTHERCOMMERCIALSUBMINOR", "OTHERCOMMERCIAL"),
-    "Flats": (""),
-    "Hotels - Having beyond 50 rooms": ("COMMERCIAL", "HOTELS", None),
-    "Others": ("COMMERCIAL", "OTHERCOMMERCIALSUBMINOR", "OTHERCOMMERCIAL"),
-    # "Mix-Use Building used for multiple purposes (like Residential+Commercial+Industrial)": "",
-    "Institutional buildings (other than educational institutions), including community halls/centres, sports stadiums, social clubs, bus stands, gold clubs, and such like buildings used for public purpose": (
-    "INSTITUTIONAL", "OTHERINSTITUTIONALSUBMINOR", "OTHERINSTITUTIONAL"),
-    "Hotels - Having 50 rooms or below": ("COMMERCIAL", "HOTELS", None),
-    "Multiplex, Malls, Shopping Complex/Center etc.": ("COMMERCIAL", "RETAIL", "MALLS"),
-    "Vacant Plot": (None, None, None),
-    "Marriage Palaces": ("COMMERCIAL", "EVENTSPACE", "MARRIAGEPALACE")
-}
-
-
-# OTHERINDUSTRIAL,OTHERINDUSTRIALSUBMINOR,INDUSTRIAL,
-# INSTITUTIONAL,
-# OTHERS
-# INDIVIDUAL, SINGLEOWNER
-# INDIVIDUAL, MULTIPLEOWNERS
-# EVENTSPACE > MARRIAGEPALACE
-# MULTIPLEX > ENTERTAINMENT
-# RETAIL > MALLS
+owner_pattern = re.compile("(?<![DSNMW])/(?![OSA])", re.I)
 
 
 class IkonProperty(Property):
@@ -174,9 +42,9 @@ class IkonProperty(Property):
         else:
             pd.property_type = "BUILTUP"
 
-    def process_address(self, context):
+    def process_address(self, context, city):
         locality = Locality(code=context["new_locality_code"])
-        self.address = Address(city="Jalandhar", door_no=context["houseno"], locality=locality)
+        self.address = Address(city=city, door_no=context["houseno"], locality=locality)
 
         if len(self.address.door_no) > 64:
             self.address.door_no = self.address.door_no[:64]
@@ -249,7 +117,7 @@ class IkonProperty(Property):
 
                     if building_category in BD_UNIT_MAP:
                         unit.usage_category_minor, unit.usage_category_sub_minor, unit.usage_category_detail = \
-                        BD_UNIT_MAP[building_category]
+                            BD_UNIT_MAP[building_category]
                     else:
                         unit.usage_category_minor = "COMMERCIAL"
                         unit.usage_category_sub_minor = "OTHERCOMMERCIALSUBMINOR"
@@ -266,7 +134,7 @@ class IkonProperty(Property):
                 pd.property_sub_type = "INDEPENDENTPROPERTY"
                 pd.land_area = context["plotarea"]
 
-    def process_record(self, context, tenantid, financial_year="2019-20"):
+    def process_record(self, context, tenantid, city, financial_year="2019-20"):
         # func = BC_MAP[context["BuildingCategory"]]
         # if func:
         #     func(self, context)
@@ -277,7 +145,7 @@ class IkonProperty(Property):
         self.process_exemption(context)
         self.process_property_type(context)
         self.process_additional_details(context)
-        self.process_address(context)
+        self.process_address(context, city)
         self.property_details[0].financial_year = financial_year
         self.process_ownershiptype(context)
         self.process_usage(context)
@@ -286,10 +154,6 @@ class IkonProperty(Property):
         self.correct_data_specific_issue(context)
         self.tenant_id = tenantid
         pass
-
-    def get_property_json(self):
-        property_encoder = PropertyEncoder().encode(self)
-        return convert_json(json.loads(property_encoder), underscore_to_camel)
 
     def process_property_type(self, context):
         property_type = context['propertytype']
@@ -363,24 +227,6 @@ class IkonProperty(Property):
         else:
             self.property_details[0].owners[0].owner_type = EC_MAP[ecat]
 
-    def upload_property(self, access_token):
-        request_data = {
-            "RequestInfo": {
-                "authToken": access_token
-            },
-            "Properties": [
-                self.get_property_json()
-            ]
-        }
-        # print(json.dumps(request_data, indent=2))
-        response = requests.post(
-            urljoin(config.HOST, "/pt-services-v2/property/_create?tenantId="),
-            json=request_data)
-
-        res = response.json()
-
-        return request_data, res
-
     def correct_mobile_number(self, context):
         pd = self.property_details[0]
 
@@ -399,7 +245,7 @@ class IkonProperty(Property):
                 or ci.mobile_number == "0000000000" \
                 or ci.mobile_number == "1111111111" \
                 or ci.mobile_number[:1] not in ["6", "7", "8", "9"]:
-                ci.mobile_number = "9999999999"
+            ci.mobile_number = "9999999999"
 
         ci.name = pattern.sub("-", ci.name)
 
@@ -416,23 +262,36 @@ class IkonProperty(Property):
             elif len(pd.property_type) > 1:
                 pd.usage_category_major = "MIXED"
 
-
             for unit in pd.units:
                 if not unit.floor_no:
                     unit.floor_no = "0"
 
 
+OC_MAP = {
+    "Self Occupied": "SELFOCCUPIED",
+    "Un-Productive": "UNOCCUPIED",
+    "Rented": "RENTED",
+    "Vacant AreaLand": "UNOCCUPIED"
+}
 
-
-class PropertyTaxParser():
-    def create_property_object(self, auth_token):
-        ri = RequestInfo(auth_token=auth_token)
-
-        property = IkonProperty()
-        PropertyCreateRequest(ri, [property])
-
-
-owner_pattern = re.compile("(?<![DSNMW])/(?![OSA])", re.I)
+BD_UNIT_MAP = {
+    "Residential Houses": (None, None, None),
+    # "Government buildings, including buildings of Government Undertakings, Board or Corporation": "",
+    "Industrial (any manufacturing unit), educational institutions, and godowns": (
+        "INDUSTRIAL", "OTHERINDUSTRIALSUBMINOR", "OTHERINDUSTRIAL"),
+    "Commercial buildings including Restaurants (except multiplexes, malls, marriage palaces)": (
+        "COMMERCIAL", "OTHERCOMMERCIALSUBMINOR", "OTHERCOMMERCIAL"),
+    "Flats": (""),
+    "Hotels - Having beyond 50 rooms": ("COMMERCIAL", "HOTELS", None),
+    "Others": ("COMMERCIAL", "OTHERCOMMERCIALSUBMINOR", "OTHERCOMMERCIAL"),
+    # "Mix-Use Building used for multiple purposes (like Residential+Commercial+Industrial)": "",
+    "Institutional buildings (other than educational institutions), including community halls/centres, sports stadiums, social clubs, bus stands, gold clubs, and such like buildings used for public purpose": (
+        "INSTITUTIONAL", "OTHERINSTITUTIONALSUBMINOR", "OTHERINSTITUTIONAL"),
+    "Hotels - Having 50 rooms or below": ("COMMERCIAL", "HOTELS", None),
+    "Multiplex, Malls, Shopping Complex/Center etc.": ("COMMERCIAL", "RETAIL", "MALLS"),
+    "Vacant Plot": (None, None, None),
+    "Marriage Palaces": ("COMMERCIAL", "EVENTSPACE", "MARRIAGEPALACE")
+}
 
 
 def parse_owners_information(text):
@@ -492,51 +351,3 @@ def parse_flat_information(text):
         floors.append(info)
 
     return floors
-
-if __name__ == "__main__":
-    p = IkonProperty()
-
-    from uploader import PropertyTaxData
-
-    start = 0
-    end = 1
-
-    access_token = superuser_login()["access_token"]
-    ri = RequestInfo(auth_token=access_token)
-    pc = PropertyCreateRequest(request_info=ri, properties=[None])
-
-    for d in PropertyTaxData.data[start:]:
-        start = start + 1
-        print(start)
-        p.process_record(d, "pb.testing")
-
-        req, res = p.upload_property()
-
-        break
-
-# print(json.dumps(data[0], indent=2))
-# dfs = read_html("/Users/tarunlalwani/Downloads/PTAX data 2017-18/2.xls")
-
-# print(dfs)
-
-# with open("floors.csv", mode="w") as f:
-#     c = writer(f)
-#     # c.writerow(['Name', 'FatherOrHusbandName', 'MobileNumber'])
-#     headers = list(map(str.strip, "Floor / Covered Area / Usage / Occupancy / Structural Factor / Tax Amt".split("/")))
-#     c.writerow(headers)
-#
-#     for d in data:
-#         output = parse_flat_information(d)
-#         # if len(output) > 1:
-#         added = False
-#         for o in output:
-#             c.writerow(o)
-#         #     if len(o[-1]) != 10 or o[-1] == "1111111111" or o[-1] == "9999999999":
-#         #         udata.add(o[-1])
-#         #         added = True
-#         # if added:
-#         #     print(o)
-#         #     count = count + 1
-#     # print(json.dumps(list(udata), indent=2))
-#
-# # print(count, len(data), "{}".format(count/len(data)))

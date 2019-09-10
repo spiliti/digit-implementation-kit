@@ -1,5 +1,12 @@
+import json
 from typing import Optional, List
+from urllib.parse import urljoin
 from uuid import UUID
+
+import requests
+
+from config import config
+from uploader.parsers.utils import PropertyEncoder, convert_json, underscore_to_camel
 
 
 class PropertyAdditionalDetails:
@@ -198,6 +205,28 @@ class Property:
         self.old_property_id = old_property_id
         self.property_details = property_details
         self.additional_details = additional_details
+
+    def get_property_json(self):
+        property_encoder = PropertyEncoder().encode(self)
+        return convert_json(json.loads(property_encoder), underscore_to_camel())
+
+    def upload_property(self, access_token):
+        request_data = {
+            "RequestInfo": {
+                "authToken": access_token
+            },
+            "Properties": [
+                self.get_property_json()
+            ]
+        }
+        # print(json.dumps(request_data, indent=2))
+        response = requests.post(
+            urljoin(config.HOST, "/pt-services-v2/property/_create?tenantId="),
+            json=request_data)
+
+        res = response.json()
+
+        return request_data, res
 
 
 class RequestInfo:
