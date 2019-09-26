@@ -464,7 +464,7 @@ def get_employees(auth_token, **kwargs):
     return data.json()["user"]
 
 
-def get_employees_by_id(auth_token, username, tenantid):
+def get_employees_by_id(auth_token, username, tenantid, active):
     # data = requests.post(url=config.HOST + '/user/_search',
     #                      json={
     #                          "RequestInfo": {
@@ -475,7 +475,7 @@ def get_employees_by_id(auth_token, username, tenantid):
     #                      })
     #
     # return data.json()["user"]
-    return get_employees(auth_token, userName=username, tenantId=tenantid)
+    return get_employees(auth_token, userName=username, tenantId=tenantid, active=active)
 
 
 def get_employees_by_phone(auth_token, phone, tenantid):
@@ -545,7 +545,7 @@ def update_user_password(auth_token, tenant_id, username, password):
 
 
 def update_user_activation(auth_token, tenant_id, username, activate=False):
-    user = get_employees_by_id(auth_token, username, tenant_id)
+    user = get_employees_by_id(auth_token, username, tenant_id, active=not activate)
 
     user[0]['dob'] = None
     user[0]['active'] = activate
