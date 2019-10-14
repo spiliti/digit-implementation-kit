@@ -1,6 +1,7 @@
 numbers = [
     ('PT/505/2019-20/002311', 'PT-505-055566'),
 ]
+tenant_Id="pb.testing"
 
 import json
 
@@ -90,7 +91,7 @@ for receiptNumber, receipt_propertyid in numbers[:]:
                         continue
 
                 # we only have one receipt for the given year, so cancel without any issues
-                data = cancel_receipt(auth_token, receiptNumber, receipt_consumercode,
+                data = cancel_receipt(auth_token, receiptNumber, receipt_consumercode,tenant_Id,
                                       "Receipt cancellation based on PI-4773")
 
                 if "Receipt" not in data:
