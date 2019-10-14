@@ -706,7 +706,7 @@ def search_receipt(auth_token, receiptNumbers=None, tenantId=None, consumerCode=
     return data.json()
 
 
-def cancel_receipt(auth_token, receipt_number, consumer_code, message):
+def cancel_receipt(auth_token, receipt_number, consumer_code,tenant_id, message):
     data = requests.post(url=config.HOST + '/collection-services/receipts/_workflow',
                          json={
                              "RequestInfo": {
@@ -717,6 +717,7 @@ def cancel_receipt(auth_token, receipt_number, consumer_code, message):
                                      "consumerCode": consumer_code,
                                      "receiptNumber": receipt_number,
                                      "action": "CANCEL",
+                                     "tenantId": tenant_id,
                                      "reason": message
                                  }
                              ]
