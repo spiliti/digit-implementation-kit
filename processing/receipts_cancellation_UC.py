@@ -8,7 +8,7 @@ auth_token = login["access_token"]
 numbers = [
     ('MP/1012/2019-20/000068')
 ]
-tenant_Id="pb.testing"
+tenant_id="pb.testing"
 
 
 reason_for_cancellation = "Receipt cancellation python script test "
@@ -41,7 +41,7 @@ for receiptNumber in numbers:
             else:
                 pass
 
-            data = cancel_receipt(auth_token, receiptNumber, receipt_consumercode,tenant_Id,
+            data = cancel_receipt(auth_token, receiptNumber, receipt_consumercode,tenant_id,
                                   reason_for_cancellation)
 
             if "Receipt" not in data:
