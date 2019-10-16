@@ -546,7 +546,7 @@ def update_user_password(auth_token, tenant_id, username, password):
 
 def remove_user_photo(auth_token, tenant_id, username):
     user = get_employees_by_id(auth_token, username, tenant_id)
-
+    user[0]['dob'] = None
     user[0]["photo"] = None
 
     data = requests.post(url=config.HOST + '/user/users/_updatenovalidate',
@@ -559,9 +559,11 @@ def remove_user_photo(auth_token, tenant_id, username):
 
     return data.json()["user"]
 
+
 def unlock_user(auth_token, tenant_id, username):
     user = get_employees_by_id(auth_token, username, tenant_id)
 
+    user[0]['dob'] = None
     user[0]["accountLocked"] = False
     data = requests.post(url=config.HOST + '/user/users/_updatenovalidate',
                          json={
@@ -572,6 +574,7 @@ def unlock_user(auth_token, tenant_id, username):
                          })
 
     return data.json()["user"]
+
 
 def update_user_activation(auth_token, tenant_id, username, activate=False):
     user = get_employees_by_id(auth_token, username, tenant_id, active=not activate)
