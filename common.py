@@ -232,8 +232,13 @@ def get_used_localities(auth_token, boundary_data, boundary_type):
 
     localities_used = resp.json()["services"]
     localities_in_use = []
-    for locality in localities_used:
-        localities_in_use.append(locality["locality"])
+    if boundary_type == "REVENUE":
+        for locality in localities_used:
+            localities_in_use.append(locality["locality"])
+    elif boundary_type == "ADMIN":
+        for locality in localities_used:
+            if locality["mohalla"] != None:
+                localities_in_use.append(locality["mohalla"])
 
     return localities_in_use
 

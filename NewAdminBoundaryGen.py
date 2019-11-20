@@ -1,12 +1,11 @@
 import uuid
 from urllib.parse import urljoin
-
+from config import load_admin_boundary_config
 import requests
 
 from common import open_excel_file, get_sheet, get_column_index, superuser_login, \
     validate_boundary_data
 from config import load_new_revenue_boundary_config, config
-
 
 def mdms_call_tenant(auth_token, tenant_id, module_name, master_details):
     url = urljoin(config.HOST, '/egov-mdms-service/v1/_search')
@@ -23,6 +22,7 @@ def get_mdms_boundary_data(auth_token, tenant_id):
         mdms_call_tenant(auth_token, tenant_id, "egov-location", "TenantBoundary")["MdmsRes"]["egov-location"][
             "TenantBoundary"]
     return get_boundary_data
+
 
 
 def create_boundary_new(auth_token, config_function, boundary_type):
@@ -92,10 +92,8 @@ def create_boundary_new(auth_token, config_function, boundary_type):
 
         locality_data.append({"id": str(uuid.uuid4()),
                               "boundaryNum": 1,
-                              "name": row[index_locality_name].strip() + " - " + ward_to_code_map[
-                                  row[index_ward_name].strip()] + area_code,
-                              "localname": row[index_locality_name].strip() + " - " + ward_to_code_map[
-                                  row[index_ward_name].strip()] + area_code,
+                              "name": row[index_locality_name].strip() + " - " + row[index_ward_name].strip() + area_code,
+                              "localname": row[index_locality_name].strip() + " - " + row[index_ward_name].strip() + area_code,
                               "longitude": None,
                               "latitude": None,
                               "label": "Locality",
@@ -263,7 +261,8 @@ def create_boundary_new(auth_token, config_function, boundary_type):
 
 def main():
     auth_token = superuser_login()["access_token"]
-    create_boundary_new(auth_token, load_new_revenue_boundary_config, "REVENUE")
+    from config import load_new_admin_boundary_config
+    create_boundary_new(auth_token,load_new_admin_boundary_config, "ADMIN")
 
 
 if __name__ == "__main__":
