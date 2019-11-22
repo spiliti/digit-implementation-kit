@@ -29,10 +29,16 @@ def download_revenue_boundary(auth_token, boundary_type):
     wk = xlwt.Workbook()
     revenue_boundary: Worksheet = wk.add_sheet("RevenueBoundary")
 
-    for i, col in enumerate(
+    if boundary_type == "REVENUE":
+        for i, col in enumerate(
             ["S.N.", "Rev Zone Name", "Rev Zone Code", "rev Block/ward name", "Rev Block/ward code", "Locality name",
              "Locality Code", "Area name"]):
-        revenue_boundary.write(0, i, col)
+            revenue_boundary.write(0, i, col)
+    elif boundary_type == "ADMIN":
+        for i, col in enumerate(
+            ["S.N.", "Zone Name", "Zone Code", "Block/ward name", "Block/ward code", "Locality name",
+             "Locality Code", "Area name"]):
+            revenue_boundary.write(0, i, col)
 
     tenant_id = config.TENANT_ID
     boundary_datas = get_mdms_boundary_data(auth_token, tenant_id)
