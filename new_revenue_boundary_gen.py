@@ -30,12 +30,12 @@ def create_boundary_new(auth_token, config_function, boundary_type):
     config_function()
 
     tenant_id = config.TENANT_ID
-    boundary_datas = get_mdms_boundary_data(auth_token, tenant_id)
-
-    for boundary_datas in boundary_datas:
-        if boundary_datas["hierarchyType"]["code"] == boundary_type:
-            boundary_datas = boundary_datas["boundary"]["children"]
-            break
+    # boundary_datas = get_mdms_boundary_data(auth_token, tenant_id)
+    #
+    # for boundary_datas in boundary_datas:
+    #     if boundary_datas["hierarchyType"]["code"] == boundary_type:
+    #         boundary_datas = boundary_datas["boundary"]["children"]
+    #         break
 
     dfs = open_excel_file(config.SHEET)
     locality = get_sheet(dfs, config.SHEET_LOCALITY)
@@ -125,13 +125,13 @@ def create_boundary_new(auth_token, config_function, boundary_type):
             "code": zones.strip(),
             "children": []})
 
-    for boundary_data in boundary_datas:
-        for ward in boundary_data["children"]:
-            for revloc in ward["children"]:
-                for locality in locality_data:
-                    if locality['code'] == revloc['code']:
-                        # locality['id']=None
-                        locality['id'] = revloc['id']
+    # for boundary_data in boundary_datas:
+    #     for ward in boundary_data["children"]:
+    #         for revloc in ward["children"]:
+    #             for locality in locality_data:
+    #                 if locality['code'] == revloc['code']:
+    #                     # locality['id']=None
+    #                     locality['id'] = revloc['id']
 
     ward_loc_data = []
     for id, wards_data in ward_data.items():
@@ -141,14 +141,14 @@ def create_boundary_new(auth_token, config_function, boundary_type):
                     wards["children"].append(locality)
             ward_loc_data.append(wards)
 
-    for boundary_data in boundary_datas:
-        for zones in zone_data:
-            if zones['code'] == boundary_data['code']:
-                zones['id'] = boundary_data['id']
-        for ward in boundary_data["children"]:
-            for loc_ward in ward_loc_data:
-                if loc_ward["code"] == ward["code"]:
-                    loc_ward["id"] = ward["id"]
+    # for boundary_data in boundary_datas:
+    #     for zones in zone_data:
+    #         if zones['code'] == boundary_data['code']:
+    #             zones['id'] = boundary_data['id']
+    #     for ward in boundary_data["children"]:
+    #         for loc_ward in ward_loc_data:
+    #             if loc_ward["code"] == ward["code"]:
+    #                 loc_ward["id"] = ward["id"]
 
     for ward_loc in ward_loc_data:
         for loc in ward_loc["children"]:
