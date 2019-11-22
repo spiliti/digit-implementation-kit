@@ -158,6 +158,20 @@ def load_new_revenue_boundary_config():
     config.COLUMN_LOCALITY_NAME = "Locality Name"
     config.COLUMN_LOCALITY_AREA = "Area Name"
 
+
+def load_new_admin_boundary_config():
+    config.SHEET_LOCALITY = "RevenueBoundary"
+
+    config.COLUMN_ZONE_CODE = "Zone Code"
+    config.COLUMN_ZONE_NAME = "Zone Name"
+
+    config.COLUMN_WARD_CODE = "Block/Ward Code"
+    config.COLUMN_WARD_NAME = "Block/Ward Name"
+
+    config.COLUMN_LOCALITY_CODE = "Locality Code"
+    config.COLUMN_LOCALITY_NAME = "Locality Name"
+    config.COLUMN_LOCALITY_AREA = "Area Name"
+
 def load_tl_billing_slab_download_config():
     config.SHEET_TRADES ="Trades"
     config.SHEET_ACCESSORIES="Accessories item"
