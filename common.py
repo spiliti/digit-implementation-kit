@@ -570,6 +570,7 @@ def unlock_user(auth_token, tenant_id, username):
 
     user[0]['dob'] = None
     user[0]["accountLocked"] = False
+    #user[0]['photo']=None
     data = requests.post(url=config.HOST + '/user/users/_updatenovalidate',
                          json={
                              "RequestInfo": {
@@ -763,6 +764,18 @@ def search_tl_billing_slab(auth_token, tenant_id=config.TENANT_ID):
     request_body = {}
     request_body["RequestInfo"] = {"authToken": auth_token}
     params = {"tenantId": tenant_id}
+    return requests.post(url, params=params, json=request_body).json()
+
+
+def search_TL(auth_token, applicationNumber, tenant_id=config.TENANT_ID):
+    url = urljoin(config.HOST, '/tl-services/v1/_search')
+    request_body = {}
+    request_body["RequestInfo"] = {"authToken": auth_token}
+    params={
+        "tenantId": tenant_id,
+        "offset" : 0,
+        "applicationNumber": applicationNumber
+    }
     return requests.post(url, params=params, json=request_body).json()
 
 
