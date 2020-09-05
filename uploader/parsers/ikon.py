@@ -97,6 +97,8 @@ class IkonProperty(Property):
             building_category = context["buildingcategory"]
 
             for floor, covered_area, usage, occupancy, _, tax in parse_flat_information(context["floor"]):
+                if "- VACANT" in floor.upper():
+                    continue   # to skip any vacant area on floor (Basicaly ...Ground Floor - Vacant... floors are not to be added and assumed to be calculated automaticaly)
                 unit = Unit(floor_no=get_floor_number(floor),
                             occupancy_type=OC_MAP[occupancy],
                             unit_area=float(covered_area) / 9)
@@ -254,12 +256,17 @@ class IkonProperty(Property):
         if len(pd.units) > 0:
             pd.property_type = "BUILTUP"
 
-            unique_property_type = set([unit.usage_category_major for unit in pd.units])
+            #unique_property_type = set([unit.usage_category_major for unit in pd.units])
+            distinct_unit_usage_type = set([unit.usage_category_major for unit in pd.units])
 
-            if len(pd.property_type) == 1:
-                pd.usage_category_major = unique_property_type[0]
 
-            elif len(pd.property_type) > 1:
+
+            #if len(pd.property_type) == 1:
+            if len(distinct_unit_usage_type) == 1:
+                pd.usage_category_major = list(distinct_unit_usage_type)[0]
+
+            #elif len(pd.property_type) > 1:
+            elif len(distinct_unit_usage_type) > 1:
                 pd.usage_category_major = "MIXED"
 
             for unit in pd.units:
