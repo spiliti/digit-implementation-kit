@@ -599,12 +599,12 @@ def update_user_activation(auth_token, tenant_id, username, activate=False):
 
 
 def search_property(auth_token, tenant_id, property_id):
-    data = requests.post(url=config.HOST + '/pt-services-v2/property/_search',
+    data = requests.post(url=config.HOST + '/property-services/property/_search',
                          json={
                              "RequestInfo": {
                                  "authToken": auth_token
                              }
-                         }, params={"ids": property_id, "tenantId": tenant_id})
+                         }, params={"propertyIds": property_id, "tenantId": tenant_id})
 
     return data.json()
 
@@ -686,7 +686,7 @@ def create_receipt(auth_token, tenant_id, receipt):
     return data.json()
 
 
-def search_receipt(auth_token, receiptNumbers=None, tenantId=None, consumerCode=None, businessCode=None, status=None):
+def search_receipt(auth_token, receiptNumbers=None, tenantId=None, consumerCodes=None, businessCode=None, status=None):
     args = {}
 
     if status:
@@ -698,8 +698,8 @@ def search_receipt(auth_token, receiptNumbers=None, tenantId=None, consumerCode=
     if tenantId:
         args["tenantId"] = tenantId
 
-    if consumerCode:
-        args["consumerCode"] = consumerCode
+    if consumerCodes:
+        args["consumerCodes"] = consumerCodes
 
     if businessCode:
         args["businessCode"] = businessCode
