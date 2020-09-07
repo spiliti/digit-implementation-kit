@@ -598,6 +598,19 @@ def update_user_activation(auth_token, tenant_id, username, activate=False):
     return data.json()["user"]
 
 
+def search_TL(auth_token, applicationNumber, tenant_id=config.TENANT_ID):
+    url = urljoin(config.HOST, '/tl-services/v1/_search')
+    request_body = {}
+    request_body["RequestInfo"] = {"authToken": auth_token}
+    params={
+        "tenantId": tenant_id,
+        "offset" : 0,
+        "applicationNumber": applicationNumber
+    }
+    return requests.post(url, params=params, json=request_body).json()
+
+
+
 def search_property(auth_token, tenant_id, property_id):
     data = requests.post(url=config.HOST + '/property-services/property/_search',
                          json={
