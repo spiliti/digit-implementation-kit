@@ -6,11 +6,12 @@ from common import superuser_login, search_receipt, search_property, cancel_rece
 login = superuser_login()
 auth_token = login["access_token"]
 numbers = [
-    ('MP/1012/2019-20/000233')
+    ('MP/1012/2020-21/000289')
 ]
 
+Ticket_No=" "
 
-reason_for_cancellation = "requested by ulb "
+reason_for_cancellation = "requested by ulb through Ticket "+Ticket_No
 
 for receiptNumber in numbers:
     payments = search_receipt(auth_token, receiptNumbers=receiptNumber,tenantId=config.TENANT_ID)["Payments"]

@@ -1,5 +1,5 @@
 numbers = [
-    ('PT/1012/2020-21/000351', 'PT-1012-877434'),
+    ('PT/1012/2020-21/000361', 'PT-1012-877434'),
 ]
 #tenant_id="pb.testing"
 #tenant_id=config.TENANT_ID
@@ -12,6 +12,8 @@ from common import superuser_login, search_receipt, search_property, cancel_rece
 login = superuser_login()
 auth_token = login["access_token"]
 
+ticket_no=" "
+reason_for_cancellation="Receipt cancellation requested by ULB through Ticket "+ticket_no
 for receiptNumber, receipt_propertyid in numbers[:]:
     payments = search_receipt(auth_token, receiptNumbers=receiptNumber,tenantId=config.TENANT_ID)["Payments"]
 
@@ -99,7 +101,7 @@ for receiptNumber, receipt_propertyid in numbers[:]:
 
                 # we only have one receipt for the given year, so cancel without any issues
                 data = cancel_receipt(auth_token, receiptNumber, receipt_consumercode,tenantid,
-                                      "Receipt cancellation requested by ULB",payment["id"])
+                                      reason_for_cancellation,payment["id"])
 
                 if "Payments" not in data:
                     print("Some error occurred - {}".format(receiptNumber), data)
