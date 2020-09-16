@@ -699,6 +699,18 @@ def create_receipt(auth_token, tenant_id, receipt):
     return data.json()
 
 
+def search_FireNOC(auth_token, applicationNumber, tenant_id=config.TENANT_ID):
+    url = urljoin(config.HOST, '/firenoc-services/v1/_search')
+    request_body = {}
+    request_body["RequestInfo"] = {"authToken": auth_token}
+    params={
+        "tenantId": tenant_id,
+        "applicationNumber": applicationNumber
+    }
+    data=requests.post(url, params=params, json=request_body)
+    return data.json()
+
+
 def search_receipt(auth_token, receiptNumbers=None, tenantId=None, consumerCodes=None, businessCode=None, status=None):
     args = {}
 
