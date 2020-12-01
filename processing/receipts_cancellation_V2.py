@@ -1,5 +1,6 @@
 numbers = [
-    ('PT/1012/2020-21/000361', 'PT-1012-877434'),
+
+    ('PT/402/2020-21/005247', 'PT-402-1004798'),
 ]
 #tenant_id="pb.testing"
 #tenant_id=config.TENANT_ID
@@ -86,9 +87,20 @@ for receiptNumber, receipt_propertyid in numbers[:]:
                     # Multiple receipts are there, check the order
                     payments_new = []
                     payments_new = sorted(property_payments, key=lambda item: item["auditDetails"]["createdTime"])
-                    latest_payment = payments_new[-1]
 
+                    i = -1
+                    latest_payment = payments_new[i]
                     payment_last_status = latest_payment["paymentStatus"]
+                    while payment_last_status == 'CANCELLED' and -i < len(payments_new)+1:
+                        i = i - 1
+                        latest_payment = payments_new[i]
+                        payment_last_status = latest_payment["paymentStatus"]
+
+
+                    if -i == len(payments_new)+1:
+                        print("All receipts related to this property are already cancelled")
+                        continue
+
                     payment_consumercode = latest_payment["paymentDetails"][0]["bill"]["consumerCode"]
                     latest_receipt_number = latest_payment["paymentDetails"][0]["receiptNumber"]
 
