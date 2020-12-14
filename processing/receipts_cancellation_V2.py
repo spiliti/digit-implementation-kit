@@ -1,6 +1,8 @@
 numbers = [
 
-    ('PT/402/2020-21/005247', 'PT-402-1004798'),
+
+
+    ('PT/1012/2019-20/000120', 'PT-1012-632746'),
 ]
 #tenant_id="pb.testing"
 #tenant_id=config.TENANT_ID
@@ -78,7 +80,7 @@ for receiptNumber, receipt_propertyid in numbers[:]:
                 #        "Payments"]
 
                 property_payments = \
-                    search_receipt(auth_token, consumerCodes=propertyid)[
+                    search_receipt(auth_token, consumerCodes=propertyid,tenantId=tenantid)[
                         "Payments"]
 
                 # print("Total receipts - {} - {}".format(receiptNumber, len(receipts)))

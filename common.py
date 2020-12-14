@@ -711,7 +711,7 @@ def search_FireNOC(auth_token, applicationNumber, tenant_id=config.TENANT_ID):
     return data.json()
 
 
-def search_receipt(auth_token, receiptNumbers=None, tenantId=None, consumerCodes=None, businessCode=None, status=None):
+def search_receipt(auth_token, receiptNumbers=None, tenantId=None, consumerCodes=None, businessCode=None, status='NEW'):
     args = {}
 
     if status:
@@ -794,7 +794,7 @@ def search_tl_billing_slab(auth_token, tenant_id=config.TENANT_ID):
 
 def cancel_property(auth_token, tenant_id, property_id, assessment_numbers=None, action="CANCEL_PROPERTY",
                     status="INACTIVE"):
-    url = urljoin(config.HOST, '/pt-services-v2/property/_cancel')
+    url = urljoin(config.HOST, '/property-services/property/_cancel')
     request_body = {}
     request_body["RequestInfo"] = {"authToken": auth_token}
     params = {
@@ -813,9 +813,11 @@ def update_property_status(auth_token, properties, status="INACTIVE"):
             search_properties = search_property(auth_token, tenant_id, property_id)["Properties"]
 
             if len(search_properties) > 0:
-                consumer_codes = list(map(lambda pd: property_id + ':' + pd["assessmentNumber"], search_properties[0]["propertyDetails"]))
+                #consumer_codes = list(map(lambda pd: property_id + ':' + pd["assessmentNumber"], search_properties[0]["propertyDetails"]))
+                consumer_codes = list(map(lambda pd: property_id , search_properties[0]))
 
-                receipts = search_receipt(auth_token, None, tenant_id, ','.join(consumer_codes))["Receipt"]
+
+                receipts = search_receipt(auth_token, None, tenant_id, ','.join(consumer_codes))["Payments"]
 
                 if len(receipts) > 0:
                     print(
@@ -825,7 +827,8 @@ def update_property_status(auth_token, properties, status="INACTIVE"):
             else:
                 print("Property {} not found".format(property_id))
 
-        cancel_property(auth_token, tenant_id, property_id, status=status)
+        resp=cancel_property(auth_token, tenant_id, property_id, status=status)
+        print(resp)
 
 
 def cleanup_property(auth_token, properties):
