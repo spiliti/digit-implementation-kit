@@ -6,7 +6,7 @@ from common import superuser_login, search_receipt, search_property, cancel_rece
 login = superuser_login()
 auth_token = login["access_token"]
 numbers = [
-    ('TL/1210/2019-20/000030', 'PB-TL-2019-04-25-002422'),
+    ('TL/1701/2020-21/000474', 'PB-TL-2021-01-11-031531'),
 ]
 tenant_id=config.TENANT_ID
 
@@ -27,7 +27,7 @@ for receiptNumber, tl_application_number in numbers[:]:
 
     # if license not found or is not in Approved Status then search the receipt and proceed to cancel
 
-    payments = search_receipt(auth_token, receiptNumbers=receiptNumber)["Payments"]
+    payments = search_receipt(auth_token, receiptNumbers=receiptNumber,tenantId=tenant_id)["Payments"]
 
     if len(payments) > 0:
         # print("Receipts found - {}".format(len(receipts)))

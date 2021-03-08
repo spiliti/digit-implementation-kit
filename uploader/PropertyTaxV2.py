@@ -83,6 +83,7 @@ class Owner:
     gender: Optional[str]
     designation: Optional[str]
     alt_contact_number: Optional[str]
+    is_corresondence_address: Optional[str]
 
     def __init__(self, documents: Optional[List[Document]] = None, name: Optional[str] = None,
                  mobile_number: Optional[str] = None, father_or_husband_name: Optional[str] = None,
@@ -90,7 +91,8 @@ class Owner:
                  relationship: Optional[str] = None, owner_type: Optional[str] = None,
                  gender: Optional[str] = None,
                  designation: Optional[str] = None,
-                 alt_contact_number: Optional[str] = None
+                 alt_contact_number: Optional[str] = None,
+                 is_correspondence_address: Optional[str] = None
                  ) -> None:
         self.documents = documents
         self.name = name
@@ -103,29 +105,37 @@ class Owner:
         self.gender = gender
         self.designation = designation
         self.alt_contact_number = alt_contact_number
+        self.is_corresondence_address=is_correspondence_address
+
+class ConstructionDetail:
+    built_up_area: Optional[str]
+    def __init__(self, built_up_area: Optional[str] = None) -> None:
+        self.built_up_area = built_up_area
+
 
 class Unit:
-    usage_category_major: Optional[str]
-    usage_category_minor: Optional[str]
-    usage_category_detail: Optional[str]
-    usage_category_sub_minor: Optional[str]
-
+    #usage_category_major: Optional[str] #was in V1
+    usage_category_minor: Optional[str] #was in V1
+    usage_category_detail: Optional[str] #was in V1
+    usage_category_sub_minor: Optional[str] #was in V1
+    usage_category: Optional[str]  #added for V2
     occupancy_type: Optional[str]
-    unit_area: Optional[int]
+    construction_detail: Optional[ConstructionDetail]
+    #unit_area: Optional[int] # was in V1
     floor_no: Optional[int]
     arv: Optional[float]
 
-    def __init__(self, usage_category_major: Optional[str] = None,
+    def __init__(self,
                  usage_category_minor: Optional[str] = None,
                  usage_category_detail: Optional[str] = None,
                  usage_category_sub_minor: Optional[str] = None,
                  occupancy_type: Optional[str] = None,
-                 unit_area: Optional[int] = None,
+                 construction_detail: Optional[ConstructionDetail] = None,
                  floor_no: Optional[str] = None,
                  arv: Optional[float] = None) -> None:
-        self.usage_category_major = usage_category_major
+        #self.usage_category_major = usage_category_major #was in V1
         self.occupancy_type = occupancy_type
-        self.unit_area = unit_area
+        self.construction_detail = construction_detail
         self.floor_no = floor_no
         self.arv = arv
         self.usage_category_minor = usage_category_minor
@@ -145,67 +155,118 @@ class Institution:
         self.designation = designation
 
 
-class PropertyDetail:
-    usage_category_minor: None
-    units: Optional[List[Unit]]
-    usage_category_major: Optional[str]
-    property_sub_type: Optional[str]
-    land_area: None
-    build_up_area: Optional[int]
-    property_type: Optional[str]
-    no_of_floors: Optional[int]
-    sub_ownership_category: Optional[str]
-    ownership_category: Optional[str]
-    owners: Optional[List[Owner]]
-    financial_year: Optional[str]
-    citizen_info: Optional[CitizenInfo]
-    institution: Optional[Institution]
-    additional_details: Optional[PropertyDetailAdditionalDetails]
-    source: Optional[str]
-
-    def __init__(self, usage_category_minor: Optional[str] = None, units: Optional[List[Unit]] = None,
-                 usage_category_major: Optional[str] = None, property_sub_type: Optional[str] = None,
-                 land_area: Optional[float] = None, build_up_area: Optional[float] = None,
-                 property_type: Optional[str] = None, no_of_floors: Optional[int] = None,
-                 sub_ownership_category: Optional[str] = None, ownership_category: Optional[str] = None,
-                 owners: Optional[List[Owner]] = None, financial_year: Optional[str] = None,
-                 citizen_info: Optional[CitizenInfo] = None,
-                 institution: Optional[Institution] = None,
-                 source: Optional[str] = None,
-                 additional_details: Optional[PropertyDetailAdditionalDetails] = None) -> None:
-        self.usage_category_minor = usage_category_minor
-        self.units = units
-        self.usage_category_major = usage_category_major
-        self.property_sub_type = property_sub_type
-        self.land_area = land_area
-        self.build_up_area = build_up_area
-        self.property_type = property_type
-        self.no_of_floors = no_of_floors
-        self.sub_ownership_category = sub_ownership_category
-        self.ownership_category = ownership_category
-        self.owners = owners
-        self.financial_year = financial_year
-        self.citizen_info = citizen_info
-        self.additional_details = additional_details
-        self.institution = institution
-        self.source = source
+#PeropertyDetail was used in V1
+# class PropertyDetail:
+#     usage_category_minor: None
+#     units: Optional[List[Unit]]
+#     usage_category_major: Optional[str]
+#     property_sub_type: Optional[str]
+#     land_area: None
+#     build_up_area: Optional[int]
+#     property_type: Optional[str]
+#     no_of_floors: Optional[int]
+#     sub_ownership_category: Optional[str]
+#     ownership_category: Optional[str]
+#     owners: Optional[List[Owner]]
+#     financial_year: Optional[str]
+#     citizen_info: Optional[CitizenInfo]
+#     institution: Optional[Institution]
+#     additional_details: Optional[PropertyDetailAdditionalDetails]
+#     source: Optional[str]
+#
+#     def __init__(self, usage_category_minor: Optional[str] = None, units: Optional[List[Unit]] = None,
+#                  usage_category_major: Optional[str] = None, property_sub_type: Optional[str] = None,
+#                  land_area: Optional[float] = None, build_up_area: Optional[float] = None,
+#                  property_type: Optional[str] = None, no_of_floors: Optional[int] = None,
+#                  sub_ownership_category: Optional[str] = None, ownership_category: Optional[str] = None,
+#                  owners: Optional[List[Owner]] = None, financial_year: Optional[str] = None,
+#                  citizen_info: Optional[CitizenInfo] = None,
+#                  institution: Optional[Institution] = None,
+#                  source: Optional[str] = None,
+#                  additional_details: Optional[PropertyDetailAdditionalDetails] = None) -> None:
+#         self.usage_category_minor = usage_category_minor
+#         self.units = units
+#         self.usage_category_major = usage_category_major
+#         self.property_sub_type = property_sub_type
+#         self.land_area = land_area
+#         self.build_up_area = build_up_area
+#         self.property_type = property_type
+#         self.no_of_floors = no_of_floors
+#         self.sub_ownership_category = sub_ownership_category
+#         self.ownership_category = ownership_category
+#         self.owners = owners
+#         self.financial_year = financial_year
+#         self.citizen_info = citizen_info
+#         self.additional_details = additional_details
+#         self.institution = institution
+#         self.source = source
 
 
 class Property:
     tenant_id: Optional[str]
     address: Optional[Address]
     old_property_id: Optional[str]
-    property_details: Optional[List[PropertyDetail]]
-    additional_details: Optional[PropertyAdditionalDetails]
+    #property_details: Optional[List[PropertyDetail]]  # was being used in v1
+    usage_category_minor: Optional[str]
+    units: Optional[List[Unit]]
+    usage_category_major: Optional[str]
+    land_area: Optional[str]
+    build_up_area: Optional[int]
+    property_type: Optional[str]
+    no_of_floors: Optional[int]
+    ownership_category: Optional[str]
+    owners: Optional[List[Owner]]
+    additional_details: Optional[PropertyDetailAdditionalDetails]
+    institution: Optional[Institution]
+    source: Optional[str]
+    channel: Optional[str]
+    documents: Optional[List[Document]]
+    creation_reason: Optional[str]
+    usage_category: Optional[str]
+    super_built_up_area: Optional[str]
 
     def __init__(self, tenant_id: Optional[str] = None, address: Optional[Address] = None,
-                 old_property_id: Optional[str] = None, property_details: Optional[List[PropertyDetail]] = None,
-                 additional_details: Optional[PropertyAdditionalDetails] = None) -> None:
+                 old_property_id: Optional[str] = None,
+                 usage_category_minor: Optional[str] = None,
+                 units: Optional[List[Unit]] = None,
+                 usage_category_major: Optional[str] = None,
+                 land_area: Optional[str] = None,
+                 build_up_area: Optional[int] = None,
+                 property_type: Optional[str] = None,
+                 no_of_floors: Optional[int] = None,
+                 ownership_category: Optional[str] = None,
+                 owners: Optional[List[Owner]] = None,
+                 additional_details: Optional[PropertyDetailAdditionalDetails] = None,
+                 institution: Optional[Institution] = None,
+                 source: Optional[str] = "LEGACY_RECORD",
+                 channel: Optional[str] = "LEGACY_MIGRATION",
+                 documents: Optional[List[Document]] = None,
+                 creation_reason: Optional[str] = None,
+                 usage_category: Optional[str] = None,
+                 super_built_up_area: Optional[str] = None ) -> None:
         self.tenant_id = tenant_id
         self.address = address
         self.old_property_id = old_property_id
-        self.property_details = property_details
+        self.usage_category_minor = usage_category_minor,
+        self.units = units,
+        self.usage_category_major = usage_category_major,
+        self.land_area = land_area,
+        self.build_up_area = build_up_area,
+        self.property_type = property_type,
+        self.no_of_floors = no_of_floors,
+        self.ownership_category = ownership_category,
+        self.owners = owners,
         self.additional_details = additional_details
+        self.institution = institution
+        self.source = source
+        self.channel = channel,
+        #self.documents = documents,
+        self.documents=[]
+        self.channel="LEGACY_MIGRATION"
+        #self.creation_reason = creation_reason
+        self.creation_reason="CREATE"
+        self.usage_category = usage_category
+        self.super_built_up_area = super_built_up_area
 
     def get_property_json(self):
         property_encoder = PropertyEncoder().encode(self)
@@ -214,15 +275,13 @@ class Property:
     def upload_property(self, access_token):
         request_data = {
             "RequestInfo": {
-                "authToken": access_token
+                "authToken":  access_token
             },
-            "Properties": [
-                self.get_property_json()
-            ]
+            "Property": self.get_property_json()
         }
         # print(json.dumps(request_data, indent=2))
         response = requests.post(
-            urljoin(config.HOST, "/pt-services/property/_create?tenantId="),
+            urljoin(config.HOST, "/property-services/property/_create?tenantId="),
             json=request_data)
 
         res = response.json()

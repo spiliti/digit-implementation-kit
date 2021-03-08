@@ -1,7 +1,7 @@
 from common import superuser_login, update_property_status
 
 properties = (
-    ('PT-1012-001828', 'pb.testing'),
+    ('PT-806-1002672', 'pb.gurdaspur'),
 )
 
 if __name__ == "__main__":

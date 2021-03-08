@@ -6,7 +6,7 @@ from common import superuser_login, search_receipt, search_property, cancel_rece
 login = superuser_login()
 auth_token = login["access_token"]
 numbers = [
-    ('MP/1012/2020-21/000289')
+    ('MP/1013/2020-21/017437')
 ]
 
 Ticket_No=" "

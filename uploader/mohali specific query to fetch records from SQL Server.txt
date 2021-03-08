@@ -1,0 +1,98 @@
+After query to validate data:
+1	replace post of s 'S
+2	some owner names are ending with aesteric (*) there for process * /
+3	In FloorDetail, replace / Residential Houses / with / Residential /
+4	In FloorDetail, replace / Commerical / with / Non-Residential /
+5	Do replacements in ExemptionCategory for multipleowners e.g. None,None to be replaced with None
+
+QUERY:
+with property as
+(
+select pd.BillID as Bill_no,
+pd.uid as uid,
+pd.PropertyID as propertyID,
+pd.FinYear as finYear,
+pd.Building_Name as building_name,
+pd.HouseNo as houseNo,
+pd.House_PlotNo as plotNo,
+pd.Sector_No as sectorNo,
+pd.Phase_No as phase_No,
+pd.Ward_No as ward_no,
+pd.Plot_Usage as plot_usage,
+pd.Plot_Area_Total as plot_area_total,
+pd.Building_Type as buildingType,
+pd.Total_Built_Up as total_build_up,
+pd.PRESENT_STATUS as presentStatus
+from ULB_PT_PROPERTY_DETAIL pd
+),
+owners as
+(
+ select CONCAT(uid,':',finYear) as uid_fy,
+ STRING_AGG(concat(name,' / ',FatherName,' / ',mobile),'#') as allOwners
+ from ULB_MAST_Customer
+ group by CONCAT(uid,':',finYear)
+),
+occupancy as
+(
+select
+oc1.propertyId,
+string_Agg(concat(oc1.UsageFactor,' / ',OccupacyFactor,' / ',StructuralFactor ),'#') as usageDetails,
+string_Agg(oc1.Excemption,',') as Exemptions
+from ULB_PT_OCCUPANT_DETAIL_1 oc1,ULB_PT_OCCUPANT_DETAIL_2  oc2
+where oc1.Occupant_RecordID=oc2.Occupant_recordID
+group by oc1.PropertyID
+),
+bill as
+(
+select
+BillId,
+count(bd.plotArea) as noOfUnits,
+STRING_AGG(concat(bd.FloorMention,' / ',bd.CoveredArea,' / ',UsageFactor,' / ',OccupancyType,' / ',ConstructionType,' / ',Tax ),'#') as units,
+CAST(convert(decimal(18,2),round(SUM(case when UsageFactor in ('Commercial','Hotel/Motel','Multiplex/Shopping Malls') then CoveredArea/9.0 else CoveredArea end),2)) as varchar(500)) as coveredArea_MultiUsage,
+sum((case when OccupancyType<>'Rented' and Floor not in ('Open Area on Ground Floor') then convert(decimal(18,2),round(CoveredArea,2)) end)) as   CoveredArea_singleUsage
+from ULB_PT_BILL_Detail bd
+inner join occupancy on occupancy.PropertyID=bd.BillID
+group by BillID
+)
+select top 1
+concat(property.uid,':',property.Bill_no) as returnId,
+'To_Generate' as previousYearId,
+property.Bill_no as acknowldgementNo,
+bh.PaymentDate as EntryDate,
+property.ward_no as zone_wardNo,
+property.sectorNo as sector,
+property.phase_No as colony_phase,
+property.houseNo as houseNo,
+owners.allOwners as ownerDetail,
+bill.units as FloorDetail,
+Exemptions as exemption_category,
+'To Check' as land_used_type,
+property.plot_usage as usage,
+property.plot_area_total as plot_area,
+bill.coveredArea_MultiUsage as covered_area_multiUsage,
+bill.coveredArea_singleUsage as covered_area_singleUsage,
+bh.Tax as Grosstax,
+bh.FireCess as fireCharges,
+bh.Interest as interestAmount,
+bh.Penalty as penalty,
+bh.REBATE as rebate,
+bh.Excemption as exemption,
+bh.TotalTax as Tax_amount,
+'' as paymentmode,
+'' as cheque_dd_transactionIs,
+'' as g8BookNo,
+'' as g8ReceiptNo,
+'' as PaymentDate,
+'' as propertyType,
+property.finYear as session,
+collection.*,
+gisData.*
+from property
+inner join ULB_PT_BILL_Header bh on property.Bill_no=bh.BillID
+inner join bill  on bill.BillID=property.Bill_no
+inner join owners on concat(property.UID,':',property.finYear)=owners.uid_fy
+--left outer  join ULB_MAST_ReceiptNumber receipts on concat(property.UID,':',property.finYear)=CONCAT(receipts.PTFinYear,':',receipts.uid)
+inner join occupancy on property.PropertyID=occupancy.PropertyID
+left outer join ULB_PT_Cash_Collection collection on collection.BillId=bh.BillID
+left outer join ULB_GIS_Sheet_Data gisData on gisData.UID_NEW=property.uid
+order by property.uid

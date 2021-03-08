@@ -1,7 +1,7 @@
 numbers = [
-    ('PT/505/2019-20/002311', 'PT-505-055566'),
+    ('PT/504/2020-21/012308', 'PT-504-978828')
 ]
-tenant_id="pb.testing"
+tenant_id="pb.mandigobindgarh"
 
 import json
 
