@@ -108,7 +108,7 @@ class IkonPropertyV2(Property):
                             construction_detail=construction_detail)
 
                 if OC_MAP[occupancy] == "RENTED":
-                    unit.arv = float(tax) * (100 / 7.5)
+                    unit.arv = round(float(tax) * (100 / 7.5), 2)
 
                     if unit.arv == 0:
                         unit.arv = None
@@ -242,7 +242,8 @@ class IkonPropertyV2(Property):
             "Joint Owners - Both/All Widows": "WIDOW",
             "Handicapped": "HANDICAPPED",
             "Freedom Fighters": "FREEDOMFIGHTER",
-            "BPL": "BPL"
+            "BPL": "BPL",
+            "Non Govt. Aided Education Organizations":"NONE"
         }
 
         ecat = context["exemptioncategory"]
