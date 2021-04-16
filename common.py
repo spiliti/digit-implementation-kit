@@ -728,6 +728,8 @@ def search_receipt(auth_token, receiptNumbers=None, tenantId=None, consumerCodes
 
     if businessCode:
         args["businessCode"] = businessCode
+        args["businessServices"]=businessCode
+
 
     # more API parameters can be bllids
 
