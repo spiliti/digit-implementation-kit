@@ -6,9 +6,10 @@ from common import superuser_login, search_receipt, search_property, cancel_rece
 login = superuser_login()
 auth_token = login["access_token"]
 numbers = [
-    ('TL/1210/2019-20/000030', 'PB-TL-2019-04-25-002422'),
+    ('TL/1201/2020-21/000050', 'PB-TL-2020-12-03-029599'),
+    ('TL/1201/2020-21/000051', 'PB-TL-2021-03-26-049945'),
 ]
-tenant_id="pb.testing"
+tenant_id="pb.doraha"
 
 reason_for_cancellation = "Receipt cancellation based on PI-5452"
 

@@ -16,7 +16,7 @@ dbpassword = os.getenv("DB_PASSWORD", "postgres")
 tenant = os.getenv("TENANT", "pb.mohali")
 city = os.getenv("CITY", "MOHALI")
 host = os.getenv("DB_HOST", "localhost")
-batch = os.getenv("BATCH_NAME", "20")
+batch = os.getenv("BATCH_NAME", "18")
 table_name = os.getenv("TABLE_NAME", "mohali_pt_legacy_data")
 default_phone = os.getenv("DEFAULT_PHONE", "9999999999")
 default_locality = os.getenv("DEFAULT_LOCALITY", "SUN62")
@@ -30,7 +30,7 @@ cursor = connection.cursor()
 postgresql_select_Query = """
 select row_to_json(pd) from {} as pd 
 where 
-pd.upload_status is NULL and
+pd.upload_status is NULL  and
 pd.new_locality_code is not null 
 and batchname = '{}' 
 limit {} 
@@ -44,17 +44,6 @@ def update_db_record(uuid, **kwargs):
 
     query = """UPDATE {} SET {} where uuid = %s""".format(table_name, ",".join(columns))
     cursor.execute(query, list(kwargs.values()) + [uuid])
-    connection.commit()
-    pass
-
-
-def update_db_record_assessment(pt_uid, **kwargs):
-    columns = []
-    for key in kwargs.keys():
-        columns.append(key + "=%s")
-
-    query = """UPDATE {} SET {} where returnid = concat(%s,'_',acknowledgementno)""".format(table_name, ",".join(columns))
-    cursor.execute(query, list(kwargs.values()) + [pt_uid])
     connection.commit()
     pass
 
@@ -101,7 +90,6 @@ def main():
 
                 if "Properties" in res:
                     pt_id = res["Properties"][0]["propertyId"]
-                    old_property_id= json_data["returnid"].split('_')[0]
                     ack_no = res["Properties"][0]["acknowldgementNumber"]
                     #calc = res["Properties"][0]["propertyDetails"][0]["calculation"] #only property created in V2, not assement yet
                     #total_amount = calc["totalAmount"]
@@ -151,36 +139,21 @@ def main():
                     update_db_record(uuid, upload_response_workflow=json.dumps(res))  #storing response updating property status as ACTIVATE to approve property
                     print("APPROVED", pt_id)
 
-                    # to create assessment(s)
-
-                    connection2 = psycopg2.connect(
-                        "dbname={} user={} password={} host={}".format(dbname, dbuser, dbpassword, host))
-                    cursor2 = connection.cursor()
-                    postgresql_select_Query2 = """
-                    select row_to_json(pd) from {} as pd 
-                    where 
-                    returnid like '{}' and
-                    pd.new_locality_code is not null 
-                    """.format(table_name, old_property_id+"_%")
-
-                    cursor2.execute(postgresql_select_Query2)
-                    data2 = cursor2.fetchmany(int(batch_size))
-                    for row2 in data2:
-                        json_data2 = row2[0]
-                        fy=json_data2["session"].replace("-20", "-")
-                        request_data={"RequestInfo": {"apiId": "Rainmaker", "ver": ".01", "ts": "", "action": "_create", "did": "1",
+                    # to create assessment
+                    request_data={"RequestInfo": {"apiId": "Rainmaker", "ver": ".01", "ts": "", "action": "_create", "did": "1",
                                   "key": "", "msgId": "20170310130900|en_IN",
                                   "authToken": access_token
                                                   },
                                   "Assessment": {"tenantId": "pb.mohali", "propertyId": pt_id,
-                                  "financialYear": fy, "assessmentDate": time.time(),
+                                  "financialYear": financial_year, "assessmentDate": time.time(),
                                   "source": "LEGACY_RECORD", "channel": "LEGACY_MIGRATION", "additionalDetails": {}}}
-                        response = requests.post(
+                    response = requests.post(
                         urljoin(config.HOST, "/property-services/assessment/_create?tenantId=pb.mohali"),
                         json=request_data)
-                        res = response.json()
-                        update_db_record_assessment(old_property_id, upload_response_assessment=json.dumps(res))  # creating assessment and storeing the response
-                        print("Assessment Created", pt_id,"  ",fy)
+
+                    res = response.json()
+                    update_db_record(uuid, upload_response_assessment=json.dumps(res))  # creating assessment and storeing the response
+                    print("Assessment Created", pt_id)
 
                 else:
                     # Some error has occurred

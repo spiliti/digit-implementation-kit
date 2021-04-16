@@ -6,15 +6,18 @@ from common import superuser_login, search_receipt, search_property, cancel_rece
 login = superuser_login()
 auth_token = login["access_token"]
 numbers = [
-    ('MP/1013/2020-21/017437')
+    ('MP/504/2020-21/002909')
 ]
+
+#businessservice='RT.Municipal_Shops_Rent'
+businessservice='UC'
 
 Ticket_No=" "
 
 reason_for_cancellation = "requested by ulb through Ticket "+Ticket_No
 
 for receiptNumber in numbers:
-    payments = search_receipt(auth_token, receiptNumbers=receiptNumber,tenantId=config.TENANT_ID)["Payments"]
+    payments = search_receipt(auth_token, receiptNumbers=receiptNumber,tenantId=config.TENANT_ID,businessCode=businessservice)["Payments"]
 
     if len(payments) > 0:
         #print("Receipts found {}".format(len(payments)))
@@ -42,7 +45,7 @@ for receiptNumber in numbers:
 
             paymentId=payment["id"]
             data = cancel_receipt(auth_token, receiptNumber, receipt_consumercode,tenantid,
-                                  reason_for_cancellation,paymentId)
+                                  reason_for_cancellation,paymentId,business_code=businessservice)
 
             if "Payments" not in data:
                 print("Some error occurred - {}".format(receiptNumber), data)

@@ -731,7 +731,7 @@ def search_receipt(auth_token, receiptNumbers=None, tenantId=None, consumerCodes
 
     # more API parameters can be bllids
 
-    data = requests.post(url=config.HOST + '/collection-services/payments/_search',
+    data = requests.post(url=config.HOST + '/collection-services/payments/'+businessCode+'/_search',
                          json={
                              "RequestInfo": {
                                  "authToken": auth_token
@@ -741,8 +741,8 @@ def search_receipt(auth_token, receiptNumbers=None, tenantId=None, consumerCodes
     return data.json()
 
 
-def cancel_receipt(auth_token, receipt_number, consumer_code,tenant_id, message,paymentId):
-    data = requests.post(url=config.HOST + '/collection-services/payments/_workflow',
+def cancel_receipt(auth_token, receipt_number, consumer_code,tenant_id, message,paymentId,business_code):
+    data = requests.post(url=config.HOST + '/collection-services/payments/'+business_code+'/_workflow',
                          json={
                              "RequestInfo": {
                                  "authToken": auth_token

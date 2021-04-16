@@ -28,7 +28,7 @@ for receiptNumber, fn_application_number in numbers[:]:
     # if license not found or is not in Approved Status then search the receipt and proceed to cancel
 
 
-    payments = search_receipt(auth_token, receiptNumbers=receiptNumber)["Payments"]
+    payments = search_receipt(auth_token, receiptNumbers=receiptNumber,businessCode='FIRENOC')["Payments"]
 
     if len(payments) > 0:
         # print("Receipts found - {}".format(len(receipts)))
@@ -57,7 +57,7 @@ for receiptNumber, fn_application_number in numbers[:]:
 
             paymentId = payment["id"]
             data = cancel_receipt(auth_token, receiptNumber, receipt_consumercode, tenant_id,
-                                  reason_for_cancellation, paymentId)
+                                  reason_for_cancellation, paymentId,business_code='FIRENOC')
 
             if "Payments" not in data:
                 print("Some error occurred - {}".format(receiptNumber), data)

@@ -1,6 +1,11 @@
+
 numbers = [
 
-    ('PT/1014/2020-21/015419', 'PT-1014-840139'),
+    ('PT/1802/2020-21/019644', 'PT-1802-729521'),
+    ('PT/1802/2020-21/019643', 'PT-1802-729521'),
+    ('PT/1802/2020-21/019641', 'PT-1802-727267'),
+    ('PT/1802/2020-21/019640', 'PT-1802-727267'),
+
 ]
 #tenant_id="pb.testing"
 #tenant_id=config.TENANT_ID
@@ -78,7 +83,7 @@ for receiptNumber, receipt_propertyid in numbers[:]:
                 #        "Payments"]
 
                 property_payments = \
-                    search_receipt(auth_token, consumerCodes=propertyid,tenantId=tenantid)[
+                    search_receipt(auth_token, consumerCodes=propertyid,tenantId=tenantid,businessCode='PT')[
                         "Payments"]
 
                 # print("Total receipts - {} - {}".format(receiptNumber, len(receipts)))
@@ -113,7 +118,7 @@ for receiptNumber, receipt_propertyid in numbers[:]:
 
                 # we only have one receipt for the given year, so cancel without any issues
                 data = cancel_receipt(auth_token, receiptNumber, receipt_consumercode,tenantid,
-                                      reason_for_cancellation,payment["id"])
+                                      reason_for_cancellation,payment["id"],business_code='PT')
 
                 if "Payments" not in data:
                     print("Some error occurred - {}".format(receiptNumber), data)
