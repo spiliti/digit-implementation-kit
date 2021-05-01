@@ -16,14 +16,14 @@ dbpassword = os.getenv("DB_PASSWORD", "postgres")
 tenant = os.getenv("TENANT", "pb.mohali")
 city = os.getenv("CITY", "MOHALI")
 host = os.getenv("DB_HOST", "localhost")
-batch = os.getenv("BATCH_NAME", "20")
+batch = os.getenv("BATCH_NAME", "1")
 table_name = os.getenv("TABLE_NAME", "mohali_pt_legacy_data")
 default_phone = os.getenv("DEFAULT_PHONE", "9999999999")
 default_locality = os.getenv("DEFAULT_LOCALITY", "SUN62")
 batch_size = os.getenv("BATCH_SIZE", "100")
 
 #dry_run = (False, True)[os.getenv("DRY_RUN", "True").lower() == "true"]
-dry_run = False
+dry_run = True
 
 connection = psycopg2.connect("dbname={} user={} password={} host={}".format(dbname, dbuser, dbpassword, host))
 cursor = connection.cursor()

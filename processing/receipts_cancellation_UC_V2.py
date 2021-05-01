@@ -6,10 +6,12 @@ from common import superuser_login, search_receipt, search_property, cancel_rece
 login = superuser_login()
 auth_token = login["access_token"]
 numbers = [
-    ('MP/1009/2021-22/004815')
+    ('MP/2113/2021-22/003651')
+  #  ('MP/402/2021-22/004181'),
+  #  ('MP/402/2021-22/004180'),
 ]
 
-businessservice='TX.TS1_copy_register_for_old_survey'
+businessservice='TX.House_Tax'
 #businessservice='UC'
 
 Ticket_No=" "

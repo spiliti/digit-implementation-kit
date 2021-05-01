@@ -31,7 +31,11 @@ class IkonPropertyV2(Property):
                 "exemptioncategory": context["exemptioncategory"],
                 "totalcoveredarea": context["totalcoveredarea"],
                 "grosstax": context["grosstax"],
-                "amountpaid": context["amountpaid"]
+                "amountpaid": context["amountpaid"],
+                "businessname": context["businessname"],
+                "waterconnectionno": context["waterconnectionno"],
+                "electricityconnectionno": context["electrictyconnectionno"]
+
             }
         }
 

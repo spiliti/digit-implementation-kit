@@ -60,6 +60,10 @@ CREATE TABLE public.mohali_pt_legacy_data (
     buildingcategory text,
     session text,
     remarks text,
+    businessname text,
+    waterconnectionno,
+    electrictyconnectionno,
+    
     ----------------
     uuid text default uuid_generate_v4(),
     previous_returnid text,
@@ -81,7 +85,9 @@ CREATE TABLE public.mohali_pt_legacy_data (
     receipt_number text,
     time_taken_receipt float8,
     parent_uuid text,
-    colony_processed text
+    colony_processed text,
+    upload_response_workflow text,
+    upload_response_assessment text
 );
 
 CREATE INDEX IF NOT EXISTS idx_mohali_pt_legacy_data_uuid on mohali_pt_legacy_data(uuid);
@@ -141,7 +147,7 @@ returnid,previous_returnid,acknowledgementno,entrydate,zone,sector,colony,housen
 If columns are not in this order, reorder them. After that import all the data into the DB using below command
 
 ```pgsql
-COPY mohali_pt_legacy_data(returnid,previous_returnid,acknowledgementno,entrydate,zone,sector,colony,houseno,owner,floor,exemptioncategory,landusedtype,usage,plotarea,totalcoveredarea,grosstax,firecharges,interestamt,penalty,rebate,exemptionamt,taxamt,paymentmode,transactionid,g8bookno,g8receiptno,paymentdate,propertytype,session,buildingcategory)
+COPY mohali_pt_legacy_data(returnid,previous_returnid,acknowledgementno,entrydate,zone,sector,colony,houseno,owner,floor,exemptioncategory,landusedtype,usage,plotarea,totalcoveredarea,grosstax,firecharges,interestamt,penalty,rebate,exemptionamt,taxamt,paymentmode,transactionid,g8bookno,g8receiptno,paymentdate,propertytype,session,buildingcategory,businessname,waterconnectionno,electrictyconnectionno)
 FROM '/tmp/combined.csv'
 WITH (format csv, QUOTE '"', header);
 ```
@@ -160,7 +166,7 @@ new_propertyid = NULL, upload_status = NULL, receipt_status = NULL, receipt_numb
 MOHALI SPECIAL CASE
 update mohali_pt_legacy_data set upload_status='WONT_UPLOAD' where acknowledgementno not in 
 (select max(acknowledgementno) as ackno from mohali_pt_legacy_data 
-group by split_part(returnid,':',1)
+group by split_part(returnid,'_',1)
 )
 --------------------------------------
 
@@ -275,7 +281,7 @@ and exists (
 MOHALI SPECIAL CASE
 update mohali_pt_legacy_data set upload_status='WONT_UPLOAD' where acknowledgementno not in 
 (select max(acknowledgementno) as ackno from mohali_pt_legacy_data 
-group by split_part(returnid,':',1)
+group by split_part(returnid,'_',1)
 )
 --------------------------------------
 
