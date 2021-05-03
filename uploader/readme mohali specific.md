@@ -24,7 +24,7 @@ GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public to legacy;
 -- ENABLE UUID extension as we will be using uuid functions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-CREATE TABLE public.mohali_pt_legacy_data (
+CREATE TABLE mohali_pt_legacy_data (
     srno text,
     returnid text,
     acknowledgementno text,
@@ -61,8 +61,8 @@ CREATE TABLE public.mohali_pt_legacy_data (
     session text,
     remarks text,
     businessname text,
-    waterconnectionno,
-    electrictyconnectionno,
+    waterconnectionno text,
+    electrictyconnectionno text,
     
     ----------------
     uuid text default uuid_generate_v4(),
@@ -179,7 +179,7 @@ We also map the `uuid` to `parent_uuid` for matching the `previous_returnid` usi
 MOHALI SPECIAL CASE FOR BELOW QUERIES
 
 update  mohali_pt_legacy_data as pt1  set parent_uuid = (select max(uuid) from mohali_pt_legacy_data pt2
-where split_part(pt2.ReturnId,':',1) = split_part(pt1.ReturnId,':',1)  and Session = '2013-14' group by split_part(pt2.ReturnId,':',1) )
+where split_part(pt2.ReturnId,'_',1) = split_part(pt1.ReturnId,'_',1)  and Session = '2013-14' group by split_part(pt2.ReturnId,'_',1) )
 where Session = '2014-15';
 
 SIMILAR REPEAT FOR ALL YEARS

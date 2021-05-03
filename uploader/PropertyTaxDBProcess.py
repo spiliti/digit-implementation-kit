@@ -16,7 +16,7 @@ dbpassword = os.getenv("DB_PASSWORD", "postgres")
 tenant = os.getenv("TENANT", "pb.mohali")
 city = os.getenv("CITY", "MOHALI")
 host = os.getenv("DB_HOST", "localhost")
-batch = os.getenv("BATCH_NAME", "1")
+batch = os.getenv("BATCH_NAME", "8")
 table_name = os.getenv("TABLE_NAME", "mohali_pt_legacy_data")
 default_phone = os.getenv("DEFAULT_PHONE", "9999999999")
 default_locality = os.getenv("DEFAULT_LOCALITY", "SUN62")
@@ -119,19 +119,27 @@ def main():
                     # to Approve property as in V2 newly created property is in INWROFLOW status
                     # search property by acknowledgement number
 
-                    request_data = {
-                        "RequestInfo": {
+                    #below loop id used as found property with status 'INWORKFLOW' is not successfully being searched in frequent
+                    tryagain = True
+                    while tryagain == True:
+                        try:
+                            request_data = {
+                                "RequestInfo": {
                                            "authToken": access_token
                                        }
                                    }
 
-                    response = requests.post(
-                        urljoin(config.HOST, "/property-services/property/_search?acknowledgementIds="+ack_no+"&tenantId=pb.mohali"),
-                        json=request_data)
+                            response = requests.post(
+                                urljoin(config.HOST, "/property-services/property/_search?acknowledgementIds="+ack_no+"&tenantId=pb.mohali"),
+                                json=request_data)
 
-                    res=response.json()
+                            res=response.json()
 
-                    property_added=res["Properties"][0]
+                            property_added=res["Properties"][0]
+                            tryagain = False
+                        except Exception as ee:
+                            continue
+
                     property_added["0"] = {"comment": "", "assignee": []}
                     property_added["workflow"] = {"id": None, "tenantId": "pb.mohali", "businessService": "PT.CREATE","businessId": ack_no, "action": "APPROVE", "moduleName": "PT","state": None, "comment": None, "documents": None, "assignes": None}
 
@@ -161,7 +169,7 @@ def main():
                     where 
                     returnid like '{}' and
                     pd.new_locality_code is not null 
-                    """.format(table_name, old_property_id+"_%")
+                    """.format(table_name, old_property_id+"\\_%")
 
                     cursor2.execute(postgresql_select_Query2)
                     data2 = cursor2.fetchmany(int(batch_size))
