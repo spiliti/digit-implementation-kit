@@ -69,6 +69,7 @@ class Document:
     def __init__(self, document_uid: None = None, document_type: None = None) -> None:
         self.document_uid = document_uid
         self.document_type = document_type
+        self.file_store_id = document_uid
 
 
 class Owner:

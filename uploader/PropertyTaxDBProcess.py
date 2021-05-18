@@ -1,3 +1,4 @@
+import datetime as dt
 import psycopg2
 import json
 import os
@@ -16,14 +17,14 @@ dbpassword = os.getenv("DB_PASSWORD", "postgres")
 tenant = os.getenv("TENANT", "pb.mohali")
 city = os.getenv("CITY", "MOHALI")
 host = os.getenv("DB_HOST", "localhost")
-batch = os.getenv("BATCH_NAME", "8")
+batch = os.getenv("BATCH_NAME", "12")
 table_name = os.getenv("TABLE_NAME", "mohali_pt_legacy_data")
 default_phone = os.getenv("DEFAULT_PHONE", "9999999999")
-default_locality = os.getenv("DEFAULT_LOCALITY", "SUN62")
+default_locality = os.getenv("DEFAULT_LOCALITY", "UNKNOWN")
 batch_size = os.getenv("BATCH_SIZE", "100")
 
 #dry_run = (False, True)[os.getenv("DRY_RUN", "True").lower() == "true"]
-dry_run = True
+dry_run = False
 
 connection = psycopg2.connect("dbname={} user={} password={} host={}".format(dbname, dbuser, dbpassword, host))
 cursor = connection.cursor()
@@ -138,6 +139,8 @@ def main():
                             property_added=res["Properties"][0]
                             tryagain = False
                         except Exception as ee:
+                            print("kafka problem, wait and retry")
+                            time.sleep(0.5)
                             continue
 
                     property_added["0"] = {"comment": "", "assignee": []}
@@ -176,12 +179,19 @@ def main():
                     for row2 in data2:
                         json_data2 = row2[0]
                         fy=json_data2["session"].replace("-20", "-")
+                        try:
+                            assessmentDate=dt.datetime.strptime(json_data2["paymentdate"], "%d/%m/%Y").strftime('%Y-%m-%d')
+                            assessmentTime=time.strptime(assessmentDate,'%Y-%m-%d')
+                            assementEpoch=time.mktime(assessmentTime)*1000
+                        except Exception as eex:
+                            assementEpoch = time.time()
                         request_data={"RequestInfo": {"apiId": "Rainmaker", "ver": ".01", "ts": "", "action": "_create", "did": "1",
                                   "key": "", "msgId": "20170310130900|en_IN",
                                   "authToken": access_token
                                                   },
                                   "Assessment": {"tenantId": "pb.mohali", "propertyId": pt_id,
-                                  "financialYear": fy, "assessmentDate": time.time(),
+                                  #"financialYear": fy, "assessmentDate": time.time(),
+                                  "financialYear": fy, "assessmentDate": assementEpoch,
                                   "source": "LEGACY_RECORD", "channel": "LEGACY_MIGRATION", "additionalDetails": {}}}
                         response = requests.post(
                         urljoin(config.HOST, "/property-services/assessment/_create?tenantId=pb.mohali"),

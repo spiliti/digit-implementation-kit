@@ -34,7 +34,8 @@ class IkonPropertyV2(Property):
                 "amountpaid": context["amountpaid"],
                 "businessname": context["businessname"],
                 "waterconnectionno": context["waterconnectionno"],
-                "electricityconnectionno": context["electrictyconnectionno"]
+                "electricityconnectionno": context["electrictyconnectionno"],
+                "photo_id": context["photoid"]
 
             }
         }
@@ -120,7 +121,7 @@ class IkonPropertyV2(Property):
 
                 floor_set.add(get_floor_number(floor))
 
-                if usage == "Residential":
+                if usage == "Residential" or usage.strip() == 'Residential Houses' or usage.strip() == "Flats" or usage.strip() == "Flat":
                     unit.usage_category_major = "RESIDENTIAL"
                     unit.usage_category="RESIDENTIAL"
                 else:
@@ -247,7 +248,9 @@ class IkonPropertyV2(Property):
             "Handicapped": "HANDICAPPED",
             "Freedom Fighters": "FREEDOMFIGHTER",
             "BPL": "BPL",
-            "Non Govt. Aided Education Organizations":"NONE"
+            "Non Govt. Aided Education Organizations": "NONE",
+            "Registered charitable and philanthropic organizations": "CHARITABLETRUST",
+            "Religious activities, religious ceremonies": "RELIGIOUSINSTITUTION"
         }
 
         ecat = context["exemptioncategory"]
@@ -255,8 +258,24 @@ class IkonPropertyV2(Property):
         if ecat == "Joint Owners - Both/All Widows":
             for owner in self.owners:
                 owner.owner_type = "WIDOW"
+                d=Document("12345","DEATHCERTIFICATE")
+                owner.documents = []
+                owner.documents.append(d)
         else:
             self.owners[0].owner_type = EC_MAP[ecat]
+            if self.owners[0].owner_type == "WIDOW":
+                d = Document("12345", "DEATHCERTIFICATE")
+                self.owners[0].documents = []
+                self.owners[0].documents.append(d)
+            elif self.owners[0].owner_type == "HANDICAPPED":
+                d = Document("44444","HANDICAPCERTIFICATE")
+                self.owners[0].documents = []
+                self.owners[0].documents.append(d)
+            elif self.owners[0].owner_type == "FREEDOMFIGHTER":
+                d = Document("44444","COMPETENTAUTHORITY")
+                self.owners[0].documents = []
+                self.owners[0].documents.append(d)
+
 
     def correct_mobile_number(self, context):
         #pd = self.property_details[0]
@@ -314,6 +333,7 @@ OC_MAP = {
 BD_UNIT_MAP = {
     "Residential Houses": (None, None, None),
     # "Government buildings, including buildings of Government Undertakings, Board or Corporation": "",
+    # Institutional Building,Community Hall,Social Clubs,Sports stadiums,Bus Stand, and Such like Building
     "Industrial (any manufacturing unit), educational institutions, and godowns": (
         "INDUSTRIAL", "OTHERINDUSTRIALSUBMINOR", "OTHERINDUSTRIAL"),
     "Commercial buildings including Restaurants (except multiplexes, malls, marriage palaces)": (

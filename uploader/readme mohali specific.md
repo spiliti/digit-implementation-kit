@@ -63,6 +63,7 @@ CREATE TABLE mohali_pt_legacy_data (
     businessname text,
     waterconnectionno text,
     electrictyconnectionno text,
+    photoid text,
     
     ----------------
     uuid text default uuid_generate_v4(),
@@ -147,7 +148,7 @@ returnid,previous_returnid,acknowledgementno,entrydate,zone,sector,colony,housen
 If columns are not in this order, reorder them. After that import all the data into the DB using below command
 
 ```pgsql
-COPY mohali_pt_legacy_data(returnid,previous_returnid,acknowledgementno,entrydate,zone,sector,colony,houseno,owner,floor,exemptioncategory,landusedtype,usage,plotarea,totalcoveredarea,grosstax,firecharges,interestamt,penalty,rebate,exemptionamt,taxamt,paymentmode,transactionid,g8bookno,g8receiptno,paymentdate,propertytype,session,buildingcategory,businessname,waterconnectionno,electrictyconnectionno)
+COPY mohali_pt_legacy_data(returnid,previous_returnid,acknowledgementno,entrydate,zone,sector,colony,houseno,owner,floor,exemptioncategory,landusedtype,usage,plotarea,totalcoveredarea,grosstax,firecharges,interestamt,penalty,rebate,exemptionamt,taxamt,paymentmode,transactionid,g8bookno,g8receiptno,paymentdate,propertytype,session,buildingcategory,businessname,waterconnectionno,electrictyconnectionno,photoid)
 FROM '/tmp/combined.csv'
 WITH (format csv, QUOTE '"', header);
 ```
@@ -164,8 +165,8 @@ new_propertyid = NULL, upload_status = NULL, receipt_status = NULL, receipt_numb
 
 --------------------------------------
 MOHALI SPECIAL CASE
-update mohali_pt_legacy_data set upload_status='WONT_UPLOAD' where acknowledgementno not in 
-(select max(acknowledgementno) as ackno from mohali_pt_legacy_data 
+update mohali_pt_legacy_data set upload_status='WONT_UPLOAD' where acknowledgementno::int not in 
+(select max(acknowledgementno::int) as ackno from mohali_pt_legacy_data 
 group by split_part(returnid,'_',1)
 )
 --------------------------------------
@@ -279,8 +280,8 @@ and exists (
 ```
 --------------------------------------
 MOHALI SPECIAL CASE
-update mohali_pt_legacy_data set upload_status='WONT_UPLOAD' where acknowledgementno not in 
-(select max(acknowledgementno) as ackno from mohali_pt_legacy_data 
+update mohali_pt_legacy_data set upload_status='WONT_UPLOAD' where acknowledgementno::int not in 
+(select max(acknowledgementno::int) as ackno from mohali_pt_legacy_data 
 group by split_part(returnid,'_',1)
 )
 --------------------------------------
@@ -339,6 +340,15 @@ update mohali_pt_legacy_data set owner=LTRIM(owner) where owner like ' %'  -- re
 -- Floors are found to be concatenated with '#' therefore '#' has to be replaced by ' '
 update mohali_pt_legacy_data set floor=replace(floor,'#',' ')
 
+-- As Floor usage master may vary in mohali therefore we have to update floor usages also
+
+update mohali_pt_legacy_data  set floor=replace(floor,'Hotel/Motel','Hotel') where floor like '%Hotel/Motel%'
+
+update mohali_pt_legacy_data set floor=replace(floor,'Flats(Complexes/Society/Apartments/MIG Super)','Flats') where floor like '%Flats(Complexes/Society/Apartments/MIG Super)%'
+
+update mohali_pt_legacy_data set floor=replace(floor,'Industrial /Educational / Godown','Industrial') where floor like '%Industrial /Educational / Godown%'
+
+update mohali_pt_legacy_data set floor=replace(floor,'Multiplex/Shopping Malls','Shopping Malls') where floor like '%Multiplex/Shopping Malls%'
 
 
 ---------------------------------------------------
