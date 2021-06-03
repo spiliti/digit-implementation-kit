@@ -17,14 +17,14 @@ dbpassword = os.getenv("DB_PASSWORD", "postgres")
 tenant = os.getenv("TENANT", "pb.mohali")
 city = os.getenv("CITY", "MOHALI")
 host = os.getenv("DB_HOST", "localhost")
-batch = os.getenv("BATCH_NAME", "12")
+batch = os.getenv("BATCH_NAME", "19")
 table_name = os.getenv("TABLE_NAME", "mohali_pt_legacy_data")
 default_phone = os.getenv("DEFAULT_PHONE", "9999999999")
 default_locality = os.getenv("DEFAULT_LOCALITY", "UNKNOWN")
 batch_size = os.getenv("BATCH_SIZE", "100")
 
 #dry_run = (False, True)[os.getenv("DRY_RUN", "True").lower() == "true"]
-dry_run = False
+dry_run = True
 
 connection = psycopg2.connect("dbname={} user={} password={} host={}".format(dbname, dbuser, dbpassword, host))
 cursor = connection.cursor()
@@ -184,6 +184,7 @@ def main():
                             assessmentTime=time.strptime(assessmentDate,'%Y-%m-%d')
                             assementEpoch=time.mktime(assessmentTime)*1000
                         except Exception as eex:
+                            continue  # skip this assessment as in mohali paymentdate or paymentmode NULL means only estimate was given
                             assementEpoch = time.time()
                         request_data={"RequestInfo": {"apiId": "Rainmaker", "ver": ".01", "ts": "", "action": "_create", "did": "1",
                                   "key": "", "msgId": "20170310130900|en_IN",
