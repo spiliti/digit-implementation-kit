@@ -35,8 +35,12 @@ class IkonPropertyV2(Property):
                 "businessname": context["businessname"],
                 "waterconnectionno": context["waterconnectionno"],
                 "electricityconnectionno": context["electrictyconnectionno"],
-                "photo_id": context["photoid"]
-
+                "photo_id": context["photoid"],
+                "leasedetail":context["leasedetail"],
+                "address":context["address"],
+                "unbuiltarea":context["unbuiltarea"],
+                "client_data_id": context["client_data_id"],
+                "height_above_36ft":context["height_above_36ft"]
             }
         }
 
@@ -59,27 +63,60 @@ class IkonPropertyV2(Property):
     def process_owner_information(self, context=None):
         owners = context["owner"]
 
-        for name, father_name, mobile in parse_owners_information(owners):
-            owner = Owner(name=name, father_or_husband_name=father_name, mobile_number=mobile)
+        for name, relation, father_name, mobile, exemptiontype in parse_owners_information(owners):
+            owner = Owner(name=name,relationship=relation ,father_or_husband_name=father_name, mobile_number=mobile, owner_type=exemptiontype)
 
-            if 'W/O' in name:
-                name, father_name = list(map(str.strip, name.split('W/O')))
-                father_name = 'W/O ' + father_name
-            elif 'D/O' in name:
-                name, father_name = list(map(str.strip, name.split('D/O')))
-                father_name = 'D/O ' + father_name
-            elif 'S/O' in name:
-                name, father_name = list(map(str.strip, name.split('S/O')))
-                father_name = 'S/O ' + father_name
 
-            if 'W/O' in father_name:
-                owner.relationship = 'HUSBAND'
-                owner.gender = 'Female'
-            else:
+
+
+            # if relation='Son of':
+            #     father_name = 'W/O ' + father_name
+            # elif 'D/O' in name:
+            #     name, father_name = list(map(str.strip, name.split('D/O')))
+            #     father_name = 'D/O ' + father_name
+            # elif 'S/O' in name:
+            #     name, father_name = list(map(str.strip, name.split('S/O')))
+            #     father_name = 'S/O ' + father_name
+
+            if 'Son of' in relation:
                 owner.relationship = 'FATHER'
                 owner.gender = 'Male'
+            elif 'Wife of' in relation:
+                owner.relationship = 'HUSBAND'
+                owner.gender = 'Female'
+            elif 'Daughter of' in relation:
+                owner.relationship = 'FATHER'
+                owner.gender = 'Female'
 
-            owner.owner_type = 'NONE'
+            #MORE OWNER TYPES TO CHECK
+            # "Widows": "WIDOW",
+            # "Non-Exempted": "NONE",
+            # "--select--": "NONE",
+            # "Person, who had served, or are serving, in any rank, whether as a combatant or a non-combatant, in the Naval, Military or Air Forces of the Union of India": "DEFENSE",
+            # "Handicapped": "HANDICAPPED",
+            # "Freedom Fighters": "FREEDOMFIGHTER",
+            # "BPL": "BPL",
+            # "Non Govt. Aided Education Organizations": "NONE",
+            # "Registered charitable and philanthropic organizations": "CHARITABLETRUST",
+            # "Religious activities, religious ceremonies": "RELIGIOUSINSTITUTION"
+
+            if exemptiontype == 'Widow':
+                owner.owner_type = 'WIDOW'
+                d = Document("44444", "DEATHCERTIFICATE")
+                owner.documents = []
+                owner.documents.append(d)
+            elif exemptiontype == 'NA' or exemptiontype == 'Not Applicable':
+                owner.owner_type = 'NONE'
+            elif exemptiontype == 'Handicapped':
+                owner.owner_type='HANDICAPPED'
+                d = Document("11111", "COMPETENTAUTHORITY")
+                owner.documents = []
+                owner.documents.append(d)
+            elif exemptiontype == 'Defense Person':
+                owner.owner_type = 'DEFENSE'
+                d = Document("11111", "COMPETENTAUTHORITY")
+                owner.documents = []
+                owner.documents.append(d)
 
             self.owners.append(owner)
             #print("owner processed ..")
@@ -94,7 +131,7 @@ class IkonPropertyV2(Property):
         #pd: PropertyDetail = self.property_details[0]
         self.units = []
 
-        if floors == 'Â' or floors == '' or floors is None:
+        if floors == 'Â' or floors == '' or floors is None or context["usage"] == "Vacant Plot":
             self.property_type = "VACANT"
             self.no_of_floors = 1
             self.land_area = context["plotarea"]
@@ -107,7 +144,14 @@ class IkonPropertyV2(Property):
             for floor, covered_area, usage, occupancy, _, tax in parse_flat_information(context["floor"]):
                 if "- VACANT" in floor.upper():
                     continue   # to skip any vacant area on floor (Basicaly ...Ground Floor - Vacant... floors are not to be added and assumed to be calculated automaticaly)
-                construction_detail=ConstructionDetail(built_up_area=float(covered_area) / 9)
+
+                #construction_detail = ConstructionDetail(built_up_area=float(covered_area) / 9)
+                #Sq. Yard on covered_area for Patiala
+                #Sq. Feet in covered_area for Patiala
+                if "Sq. Yard" in covered_area:
+                    construction_detail = ConstructionDetail(built_up_area=float(covered_area.split(" ", 1)[0]))
+                else:  # It is Sq. Feet
+                    construction_detail = ConstructionDetail(built_up_area=float(covered_area.split(" ", 1)[0]) / 9)  # converted Sq. Feet to Sq. Yard
                 unit = Unit(floor_no=get_floor_number(floor),
                             occupancy_type=OC_MAP[occupancy],
                             construction_detail=construction_detail)
@@ -121,7 +165,7 @@ class IkonPropertyV2(Property):
 
                 floor_set.add(get_floor_number(floor))
 
-                if usage == "Residential" or usage.strip() == 'Residential Houses' or usage.strip() == "Flats" or usage.strip() == "Flat":
+                if usage == "Residential" or usage.strip() == 'Residential Houses' or usage.strip() == 'Residential House'  or usage.strip() == "Flat":
                     unit.usage_category_major = "RESIDENTIAL"
                     unit.usage_category="RESIDENTIAL"
                 else:
@@ -168,7 +212,7 @@ class IkonPropertyV2(Property):
         #     raise Exception("No Mapping function")
         financial_year = context["session"].replace("-20", "-")
         self.process_owner_information(context)
-        self.process_exemption(context)
+        #self.process_exemption(context)  # for Patiala ExemptinCategory i.e. ownerType is present with each owner
         self.process_property_type(context)
         self.process_additional_details(context)
         self.process_address(context, city) # in locality, only localitycode is assigned but area attribute is null yet
@@ -189,12 +233,25 @@ class IkonPropertyV2(Property):
             "Residential": "RESIDENTIAL",
             "0": "RESIDENTIAL",
             "Industrial": "NONRESIDENTIAL",
-            "Non-Residential": "NONRESIDENTIAL"
+            "Non-Residential": "NONRESIDENTIAL",
+            "COM":"NONRESIDENTIAL.COMMERCIAL",
+            "RES":"RESIDENTIAL",
+            "MIX":"MIXED"
         }
         self.usage_category_minor = "None"
         self.usage_category_minor = None
-        self.usage_category_major = PT_MAP[property_type]
-        self.usage_category = PT_MAP[property_type]
+        if property_type == None and context["buildingcategory"] == "Residential House":
+            self.usage_category_major = "RESIDENTIAL"  # OBSOLETE in v2
+            self.usage_category = "RESIDENTIAL"
+        elif property_type == None and context["buildingcategory"] == "Government building":
+            self.usage_category_major = "NONRESIDENTIAL"  # OBSOLETE in v2
+            self.usage_category = "NONRESIDENTIAL.OTHERS"
+        elif property_type == None:
+            self.usage_category_major="NONRESIDENTIAL"  # OBSOLETE in v2
+            self.usage_category = "NONRESIDENTIAL.COMMERCIAL"
+        else:
+            self.usage_category = PT_MAP[property_type]
+            self.usage_category_major = PT_MAP[property_type]
 
     def process_ownershiptype(self, context):
         #pd = self.property_details[0]
@@ -205,7 +262,11 @@ class IkonPropertyV2(Property):
                 "INSTITUTIONALGOVERNMENT", "STATEGOVERNMENT"),
             "The building and land owned and used by the Corporation": ("INSTITUTIONALPRIVATE", "PRIVATECOMPANY"),
             "The building and land used for Schools and Colleges owned or aided by the State Government": (
-                "INSTITUTIONALGOVERNMENT", "STATEGOVERNMENT")
+                "INSTITUTIONALGOVERNMENT", "STATEGOVERNMENT"),
+            "Central Government Property": (
+                "INSTITUTIONALGOVERNMENT", "CENTRALGOVERNMENT")
+
+
         }
 
         # INSTITUTIONALPRIVATE, PRIVATECOMPANY
@@ -324,22 +385,34 @@ class IkonPropertyV2(Property):
 
 
 OC_MAP = {
+
     "Self Occupied": "SELFOCCUPIED",
+    "SELF_USE": "SELFOCCUPIED",
+    "NA": "SELFOCCUPIED",
     "Un-Productive": "UNOCCUPIED",
     "Rented": "RENTED",
-    "Vacant AreaLand": "UNOCCUPIED"
+    "RENT": "RENTED",
+    "Vacant AreaLand": "UNOCCUPIED",
+    "Vacant Plot": "UNOCCUPIED",
+    "Vacant Plot(Commercial)": "UNOCCUPIED",
+    "Vacant Plot(Residential)": "UNOCCUPIED"
 }
 
 BD_UNIT_MAP = {
     "Residential Houses": (None, None, None),
+    "Residential House": (None, None, None),
     # "Government buildings, including buildings of Government Undertakings, Board or Corporation": "",
     # Institutional Building,Community Hall,Social Clubs,Sports stadiums,Bus Stand, and Such like Building
     "Industrial (any manufacturing unit), educational institutions, and godowns": (
         "INDUSTRIAL", "OTHERINDUSTRIALSUBMINOR", "OTHERINDUSTRIAL"),
     "Commercial buildings including Restaurants (except multiplexes, malls, marriage palaces)": (
         "COMMERCIAL", "OTHERCOMMERCIALSUBMINOR", "OTHERCOMMERCIAL"),
+    "Commercial Buildings except Multiplexes, Malls, Marriage Palaces": ("COMMERCIAL", "OTHERCOMMERCIALSUBMINOR", "OTHERCOMMERCIAL"),
+    "Commercial Buildings except Multiplexes, Malls, Marriage Palaces,Godown":("COMMERCIAL", "OTHERCOMMERCIALSUBMINOR", "OTHERCOMMERCIAL"),
     "Flats": (""),
+    "Commercial Buildings except Multiplexes, Malls, Marriage Palaces,Parking space (only in respect of multi-storey flats or buildings).":(""),
     "Hotels - Having beyond 50 rooms": ("COMMERCIAL", "HOTELS", None),
+    "Hotel": ("COMMERCIAL", "HOTELS", None),
     "Others": ("COMMERCIAL", "OTHERCOMMERCIALSUBMINOR", "OTHERCOMMERCIAL"),
     # "Mix-Use Building used for multiple purposes (like Residential+Commercial+Industrial)": "",
     "Institutional buildings (other than educational institutions), including community halls/centres, sports stadiums, social clubs, bus stands, gold clubs, and such like buildings used for public purpose": (
@@ -347,14 +420,25 @@ BD_UNIT_MAP = {
     "Hotels - Having 50 rooms or below": ("COMMERCIAL", "HOTELS", None),
     "Multiplex, Malls, Shopping Complex/Center etc.": ("COMMERCIAL", "RETAIL", "MALLS"),
     "Vacant Plot": (None, None, None),
-    "Marriage Palaces": ("COMMERCIAL", "EVENTSPACE", "MARRIAGEPALACE")
+    "Vacant Plot(Commercial)": (None, None, None),
+    "Vacant Plot(Residential)": (None, None, None),
+    "Marriage Palaces": ("COMMERCIAL", "EVENTSPACE", "MARRIAGEPALACE"),
+    "Petrol Pump":("COMMERCIAL", "OTHERCOMMERCIALSUBMINOR", "OTHERCOMMERCIAL"),
+    "Multiplex": ("COMMERCIAL","ENTERTAINMENT","MULTIPLEX"),
+    "Mall": ("COMMERCIAL","RETAIL","ESTABLISHMENTSINMALLS"),
+    "Gas Godown": ("COMMERCIAL", "OTHERCOMMERCIALSUBMINOR", "OTHERCOMMERCIAL"),
+    "Commercial Buildings except Multiplexes, Malls, Marriage Palaces,Residential House":("COMMERCIAL", "OTHERCOMMERCIALSUBMINOR", "OTHERCOMMERCIAL")
+
+
+
 }
 
 
 def parse_owners_information(text):
     # text = text or """ASHOK KUMAR / ACHHRU RAM / 9779541015JEET KUMARI / W/O ASHOK KUMAR / 9779541015"""
 
-    info = list(map(str.strip, owner_pattern.split(text, 2)))
+    #info = list(map(str.strip, owner_pattern.split(text, 3)))
+    info = list(map(str.strip, text.split("/",4)))
     owners = []
 
     pat = re.compile("^\d+|^N/?A")
@@ -375,7 +459,8 @@ def parse_owners_information(text):
 
         if len(last_element) > split_index:
             owners.append(info)
-            info = list(map(str.strip, owner_pattern.split(last_element[split_index:], 2)))
+            #info = list(map(str.strip, owner_pattern.split(last_element[split_index:], 2)))
+            info = list(map(str.strip,last_element[split_index:].split("/",4)))
         else:
             break
 
@@ -388,13 +473,15 @@ def parse_owners_information(text):
 def parse_flat_information(text):
     # text = text or """Ground Floor / 1100.00 / Residential / Self Occupied / Pucca / 939.58Ground Floor - Vacant In Use / 250.00 / Residential / Self Occupied / Pucca / 185.421st Floor / 1100.00 / Residential / Self Occupied / Pucca / 613.252nd Floor / 1100.00 / Residential / Self Occupied / Pucca / 368.50"""
 
-    info = list(map(str.strip, owner_pattern.split(text, 5)))
+    #info = list(map(str.strip, owner_pattern.split(text, 5)))
+    info = list(map(str.strip, text.split("/", 5)))
+    #info = info + info.split(" ", 1);
     floors = []
     while "/" in info[-1]:
         last_element = info[-1].strip().strip("/").strip()
 
         # get the phone number
-        split_index = last_element.find(".") + 3
+        split_index = last_element.find(" ")
         info[-1] = last_element[:split_index]
         floors.append(info)
 
@@ -411,7 +498,8 @@ def parse_flat_information(text):
                 #if value is not a float then its ok that first element is floor number
 
         if remaining:
-            info = list(map(str.strip, owner_pattern.split(remaining, 5)))
+            #info = list(map(str.strip, owner_pattern.split(remaining, 5)))
+            info = list(map(str.strip, remaining.split("/", 5)))
         else:
             info = None
             break

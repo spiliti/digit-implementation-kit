@@ -1,10 +1,7 @@
 
 numbers = [
 
-    ('PT/1802/2020-21/019644', 'PT-1802-729521'),
-    ('PT/1802/2020-21/019643', 'PT-1802-729521'),
-    ('PT/1802/2020-21/019641', 'PT-1802-727267'),
-    ('PT/1802/2020-21/019640', 'PT-1802-727267'),
+    ('PT/1703/2021-22/004996', 'PT-1703-614829'),
 
 ]
 #tenant_id="pb.testing"
@@ -21,7 +18,7 @@ auth_token = login["access_token"]
 ticket_no=" "
 reason_for_cancellation="Receipt cancellation requested by ULB through Ticket "+ticket_no
 for receiptNumber, receipt_propertyid in numbers[:]:
-    payments = search_receipt(auth_token, receiptNumbers=receiptNumber,tenantId=config.TENANT_ID)["Payments"]
+    payments = search_receipt(auth_token, receiptNumbers=receiptNumber,tenantId=config.TENANT_ID,businessCode='PT')["Payments"]
 
     if len(payments) > 0:
         # print("Receipts found - {}".format(len(receipts)))

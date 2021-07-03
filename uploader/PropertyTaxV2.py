@@ -87,7 +87,7 @@ class Owner:
     is_corresondence_address: Optional[str]
 
     def __init__(self, documents: Optional[List[Document]] = None, name: Optional[str] = None,
-                 mobile_number: Optional[str] = None, father_or_husband_name: Optional[str] = None,
+                 mobile_number: Optional[str] = None,  father_or_husband_name: Optional[str] = None,
                  email_id: Optional[str] = None, permanent_address: Optional[str] = None,
                  relationship: Optional[str] = None, owner_type: Optional[str] = None,
                  gender: Optional[str] = None,
