@@ -15,14 +15,16 @@ As Patiala records received contains manual enteries also for session 2018-19 or
        2.2 still some of only transactions contains dd/mm/yyyy which belongs to session 2019-20 onwards
            replace them from '/' to '-' means dd/mm/yyyy to dd-mm-yyyy
     3. Check '/' in 'M/S Firm name' in owner column
-    3. CLIENT_DATA_PROPERTY_ID seems to be sequatial return id, therefore this column is being copied and used as Aknwoledgement number
+    4. Check " ' " single qoute (post of es) and replace with space
+    5. CLIENT_DATA_PROPERTY_ID seems to be sequatial return id, therefore this column is being copied and used as Aknwoledgement number
        assuming higher this acknowledgement number, latest is the return date
+    6. update session column to 4-digit years by using formula ="20"&SUBSTITUTE(AM160,"-","-20") e.g. 2021-22 to 2021-2022
        
        
        achieving above corrections in excel:
          filtered for sessions 2019-20, 2020-21 and 2021-22 and converted 2 digit year to 4-digit year   
 
-OWNER DETAILS column in excel to be corrected as =LEFT(K3,Len(L3)-2) to remove last '#' (Hash)
+OWNER DETAILS column in excel to be corrected as =LEFT(L3,Len(L3)-2) to remove last '#' (Hash)
 Similarly LEASE DETAIL, FLOOR_AREA_DETAIL, UNCOVERED AREA DETAIL to be corrected to remove '#' at last
 
 updated unit map from building_categories and unit usages
