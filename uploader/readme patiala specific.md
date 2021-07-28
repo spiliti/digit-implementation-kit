@@ -5,13 +5,14 @@ List of OwnerTypes
             NA
             Not Applicable
             Widow
-            Defense Person 
+            Defense Person
+            Handicapped 
 
 As Patiala records received contains manual enteries also for session 2018-19 or below, 
     1. therefore duplicacy is there (should be filtered)
     2. dates are in different formats like dd-mm-yy, dd/mm/yyyy, mm/dd/yy, dd-mmm-yyyy etc
        2.1 dates from online systems seems to be in format dd-mm-yy
-           convert these dates to 4-digit year dd-mm-yyyy
+           convert these dates to 4-digit year dd-mm-yyyy (Hint: Use VALUE() function and then format as date)
        2.2 still some of only transactions contains dd/mm/yyyy which belongs to session 2019-20 onwards
            replace them from '/' to '-' means dd/mm/yyyy to dd-mm-yyyy
     3. Check '/' in 'M/S Firm name' in owner column
@@ -31,6 +32,8 @@ updated unit map from building_categories and unit usages
 BD_UNIT_MAP = {
     "Residential Houses": (None, None, None),
     "Residential House": (None, None, None),
+    
+
     # "Government buildings, including buildings of Government Undertakings, Board or Corporation": "",
     # Institutional Building,Community Hall,Social Clubs,Sports stadiums,Bus Stand, and Such like Building
     "Industrial (any manufacturing unit), educational institutions, and godowns": (
@@ -58,8 +61,10 @@ BD_UNIT_MAP = {
     "Mall": ("COMMERCIAL","RETAIL","ESTABLISHMENTSINMALLS"),
     "Gas Godown": ("COMMERCIAL", "OTHERCOMMERCIALSUBMINOR", "OTHERCOMMERCIAL"),
     "Commercial Buildings except Multiplexes, Malls, Marriage Palaces,Residential House":("COMMERCIAL", "OTHERCOMMERCIALSUBMINOR", "OTHERCOMMERCIAL")
+    
 }
 
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 
 ------------------------------------------------
@@ -262,6 +267,12 @@ Now update the localities in DB
 ```PGSQL
 
 
+-----------------------------------------------------------
+FOUND THAT MANY COLONY IN PATIALA IS HAVING AREA1 as well as AREA2 enteries 
+therefore locality table is to be altered with postfixed as MAIN with higher AREATYPE value
+
+
+---------------------------------------------------------------------------------------------
 
 patiala SPECIAL CASE
 ---------------------
@@ -271,8 +282,31 @@ update patiala_pt_legacy_data set colony_processed=regexp_replace(regexp_replace
 
 update patiala_boundary set colony_processed = regexp_replace(regexp_replace(trim(upper(colony)),'[^a-zA-Z0-9]+', ' ','g'),'\s+', ' ')
 
+PATIALA SPECIAL LOCALITY CODE MATCHING
 ---------------------------------
+1.
+update patiala_pt_legacy_data as pt1 set new_locality_code = (
+	select code from patiala_boundary jb where  jb.colony_processed = pt1.colony_processed and  jb.sector = pt1.sector -- and jb.area=upper(replace(pt1.zone,' ',''))
+)where new_locality_code isnull;
+------------
 
+2.
+update patiala_pt_legacy_data as pt1 set new_locality_code = (
+	select code from patiala_boundary jb where  pt1.colony_processed=jb.colony_processed  and jb.area=upper(replace(pt1.zone,' ','')) order by area limit 1
+)where new_locality_code isnull;
+
+----------------------------
+3.
+update patiala_pt_legacy_data as pt1 set new_locality_code = (
+	select code from patiala_boundary jb where  pt1.colony_processed=jb.colony_processed   order by area limit 1
+)where new_locality_code isnull;
+--------------------------
+
+4.
+update patiala_pt_legacy_data set new_locality_code = 'UNKNOWN' where new_locality_code isnull;
+
+-------------------------
+OBSOLETE
 update patiala_pt_legacy_data as pt1 set new_locality_code = (
 	select code from patiala_boundary jb where  jb.colony_processed = pt1.colony_processed and  jb.sector = pt1.sector
 )where new_locality_code isnull;
@@ -284,6 +318,8 @@ update patiala_pt_legacy_data as pt1 set new_locality_code = (
 update patiala_pt_legacy_data set new_locality_code = 'UNKNOWN' where new_locality_code isnull;
 
 update patiala_pt_legacy_data set new_locality_code = 'UNKNOWN' where new_locality_code isnull and parent_uuid isnull;
+-------------------------------------------
+
 
 #Now for Patiala only those locality_code should be 'UNKNOWN' which assessments belongs to before 2018-19
 
@@ -367,8 +403,16 @@ update patiala_pt_legacy_data set owner=LTRIM(owner) where owner like ' %'  -- r
 -- Floors are found to be concatenated with '#' therefore '#' has to be replaced by ' '
 
 update patiala_pt_legacy_data set floor=replace(floor,'#',' ')
+update patiala_pt_legacy_data set leasedetail=replace(leasedetail,'#',' ')
 
-select floor,leasedetail from patiala_pt_legacy_data where leasedetail is not null
+Check before execution 
+----------------------------
+--update patiala_pt_legacy_data set owner=replace(owner,'Not Provided / Not Applicable','NA') 
+select owner from patiala_pt_legacy_data
+where owner like '%Not Provided / Not Applicable%'
+
+
+select floor,leasedetail from patiala_pt_legacy_data where leasedetail is not null and upload_status is null
 ---------------------------------------------------
 
 
@@ -409,4 +453,13 @@ where dd.demandid=d.id
 and d.consumercode in (select propertyid from eg_pt_property where tenantId='pb.patiala' and source='LEGACY_RECORD' and channel='LEGACY_MIGRATION' and status='ACTIVE' and createdtime>1622268421628)
 and consumercode not in (select distinct consumercode from egbs_bill_v1 bill, egbs_billdetail_v1 bd where status='ACTIVE' and bd.billid=bill.id and consumercode in (select propertyid from eg_pt_property where tenantId='pb.patiala' and source='LEGACY_RECORD' and channel='LEGACY_MIGRATION' and status='ACTIVE' ))
 group by d.id)
+
+
+
+All Properties with RENTED units are made under status INWORKFLOW so that needed to be APPROVED before assessments
+---------------------------------------------------------------------------------------------------------------------- 
+--update eg_pt_property set status='INWORKFLOW' 
+--select count(*) from eg_pt_property
+where id in (select propertyid from eg_pt_unit where occupancytype='RENTED' and active='true') and status='ACTIVE' and tenantid='pb.patiala' and source='LEGACY_RECORD' and channel='LEGACY_MIGRATION' and createdtime>1622268421628  
+
 

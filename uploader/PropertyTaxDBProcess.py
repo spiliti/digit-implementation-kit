@@ -11,13 +11,13 @@ from config import config
 from uploader.parsers.ikonV2 import IkonPropertyV2
 
 
-dbname = os.getenv("DB_NAME", "mohali_legacy_data")
+dbname = os.getenv("DB_NAME", "patiala_legacy_data")
 dbuser = os.getenv("DB_USER", "postgres")
 dbpassword = os.getenv("DB_PASSWORD", "postgres")
 tenant = os.getenv("TENANT", "pb.patiala")
 city = os.getenv("CITY", "PATIALA")
 host = os.getenv("DB_HOST", "localhost")
-batch = os.getenv("BATCH_NAME", "10")
+batch = os.getenv("BATCH_NAME", "12")
 table_name = os.getenv("TABLE_NAME", "patiala_pt_legacy_data")
 default_phone = os.getenv("DEFAULT_PHONE", "9999999999")
 default_locality = os.getenv("DEFAULT_LOCALITY", "UNKNOWN")
@@ -93,7 +93,7 @@ def main():
                 # p.address.locality = {
                 #     "code": default_locality,
                 #     "area": "AREA1"
-                # }
+                # }'landArea' (239735496) = {str} '425 Sq. Yard'
                 #p.additional_details = {}
 
                 start = time.time()

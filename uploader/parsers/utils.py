@@ -44,8 +44,10 @@ def convert_dump(*args, **kwargs):
 
 FLOOR_MAP = {
     "Upper Ground Floor": "0",
+    "UpperGroundFloor": "0",
     "Other Floor": "0",
     "Lower Ground Floor": "-1",
+    "LowerGroundFloor": "-1",
     "Ground Floor - Vacant": "0",
     "Ground Floor - Vacant - Vacant": "0",
     "Ground Floor - Vacant In Use": "0",
@@ -86,6 +88,7 @@ FLOOR_MAP = {
     "1st Floor": "1",
     "Entire Floors": "1",
     "Covered Area on Other Floors & Basements": "1",
+    "Mezzanine Floor": "1",
     "FirstFloor": "1",
     "SecondFloor": "2",
     "ThirdFloor": "3",

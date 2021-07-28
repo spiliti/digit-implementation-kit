@@ -11,14 +11,14 @@ from config import config
 from uploader.parsers.ikonV2 import IkonPropertyV2
 
 
-dbname = os.getenv("DB_NAME", "mohali_legacy_data")
+dbname = os.getenv("DB_NAME", "patiala_legacy_data")
 dbuser = os.getenv("DB_USER", "postgres")
 dbpassword = os.getenv("DB_PASSWORD", "postgres")
-tenant = os.getenv("TENANT", "pb.mohali")
-city = os.getenv("CITY", "MOHALI")
+tenant = os.getenv("TENANT", "pb.patiala")
+city = os.getenv("CITY", "PATIALA")
 host = os.getenv("DB_HOST", "localhost")
-batch = os.getenv("BATCH_NAME", "10")
-table_name = os.getenv("TABLE_NAME", "mohali_pt_legacy_data")
+batch = os.getenv("BATCH_NAME", "11")
+table_name = os.getenv("TABLE_NAME", "patiala_pt_legacy_data")
 default_phone = os.getenv("DEFAULT_PHONE", "9999999999")
 default_locality = os.getenv("DEFAULT_LOCALITY", "UNKNOWN")
 batch_size = os.getenv("BATCH_SIZE", "100")
@@ -93,7 +93,7 @@ def main():
                 # p.address.locality = {
                 #     "code": default_locality,
                 #     "area": "AREA1"
-                # }
+                # }'landArea' (239735496) = {str} '425 Sq. Yard'
                 #p.additional_details = {}
 
                 start = time.time()
@@ -102,7 +102,7 @@ def main():
 
                 if "Properties" in res:
                     pt_id = res["Properties"][0]["propertyId"]
-                    old_property_id= json_data["returnid"].split('_')[0]
+                    old_property_id= json_data["returnid"]
                     ack_no = res["Properties"][0]["acknowldgementNumber"]
                     #calc = res["Properties"][0]["propertyDetails"][0]["calculation"] #only property created in V2, not assement yet
                     #total_amount = calc["totalAmount"]
@@ -131,7 +131,7 @@ def main():
                                    }
 
                             response = requests.post(
-                                urljoin(config.HOST, "/property-services/property/_search?acknowledgementIds="+ack_no+"&tenantId=pb.mohali"),
+                                urljoin(config.HOST, "/property-services/property/_search?acknowledgementIds="+ack_no+"&tenantId=pb.patiala"),
                                 json=request_data)
 
                             res=response.json()
@@ -144,7 +144,7 @@ def main():
                             continue
 
                     property_added["0"] = {"comment": "", "assignee": []}
-                    property_added["workflow"] = {"id": None, "tenantId": "pb.mohali", "businessService": "PT.CREATE","businessId": ack_no, "action": "APPROVE", "moduleName": "PT","state": None, "comment": None, "documents": None, "assignes": None}
+                    property_added["workflow"] = {"id": None, "tenantId": "pb.patiala", "businessService": "PT.CREATE","businessId": ack_no, "action": "APPROVE", "moduleName": "PT","state": None, "comment": None, "documents": None, "assignes": None}
 
                     request_data = {
                         "RequestInfo": {
@@ -172,7 +172,7 @@ def main():
                     where 
                     returnid like '{}' and
                     pd.new_locality_code is not null 
-                    """.format(table_name, old_property_id+"\\_%")
+                    """.format(table_name, old_property_id)
 
                     cursor2.execute(postgresql_select_Query2)
                     data2 = cursor2.fetchmany(int(batch_size))
@@ -180,21 +180,22 @@ def main():
                         json_data2 = row2[0]
                         fy=json_data2["session"].replace("-20", "-")
                         try:
-                            assessmentDate=dt.datetime.strptime(json_data2["paymentdate"], "%d/%m/%Y").strftime('%Y-%m-%d')
+                            assessmentDate=dt.datetime.strptime(json_data2["paymentdate"], "%d-%m-%Y").strftime('%Y-%m-%d')
                             assessmentTime=time.strptime(assessmentDate,'%Y-%m-%d')
                             assementEpoch=time.mktime(assessmentTime)*1000
                         except Exception as eex:
-                            assementEpoch = time.time()
+                            #continue  # skip this assessment as in mohali paymentdate or paymentmode NULL means only estimate was given
+                            assementEpoch = 946665000000 # 01-Jan-2000 default assessment epoch time
                         request_data={"RequestInfo": {"apiId": "Rainmaker", "ver": ".01", "ts": "", "action": "_create", "did": "1",
                                   "key": "", "msgId": "20170310130900|en_IN",
                                   "authToken": access_token
                                                   },
-                                  "Assessment": {"tenantId": "pb.mohali", "propertyId": pt_id,
+                                  "Assessment": {"tenantId": "pb.patiala", "propertyId": pt_id,
                                   #"financialYear": fy, "assessmentDate": time.time(),
                                   "financialYear": fy, "assessmentDate": assementEpoch,
                                   "source": "LEGACY_RECORD", "channel": "LEGACY_MIGRATION", "additionalDetails": {}}}
                         response = requests.post(
-                        urljoin(config.HOST, "/property-services/assessment/_create?tenantId=pb.mohali"),
+                        urljoin(config.HOST, "/property-services/assessment/_create?tenantId=pb.patiala"),
                         json=request_data)
                         res = response.json()
                         update_db_record_assessment(old_property_id, upload_response_assessment=json.dumps(res))  # creating assessment and storeing the response
