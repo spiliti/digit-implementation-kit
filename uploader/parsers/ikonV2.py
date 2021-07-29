@@ -298,9 +298,12 @@ class IkonPropertyV2(Property):
         elif property_type == None and context["buildingcategory"] == "Government building":
             self.usage_category_major = "NONRESIDENTIAL"  # OBSOLETE in v2
             self.usage_category = "NONRESIDENTIAL.OTHERS"
-        elif property_type == "COM" and context["buildingcategory"] == "Industrial":
+        elif property_type == "COM" and (context["buildingcategory"] == "Industrial" or context["buildingcategory"]== "Godown" or context["buildingcategory"] == "Gas Godown"):
             self.usage_category_major = "NONRESIDENTIAL"  # OBSOLETE in v2
             self.usage_category = "NONRESIDENTIAL.INDUSTRIAL"
+        elif property_type == "COM" and (context["buildingcategory"] == "Educational Institutions") :
+            self.usage_category_major = "NONRESIDENTIAL"  # OBSOLETE in v2
+            self.usage_category = "NONRESIDENTIAL.INSTITUTIONAL"
         elif property_type == None:
             self.usage_category_major="NONRESIDENTIAL"  # OBSOLETE in v2
             self.usage_category = "NONRESIDENTIAL.COMMERCIAL"
@@ -500,8 +503,9 @@ BD_UNIT_MAP = {
     "Petrol Pump":("COMMERCIAL", "OTHERCOMMERCIALSUBMINOR", "OTHERCOMMERCIAL"),
     "Multiplex": ("COMMERCIAL","ENTERTAINMENT","MULTIPLEX"),
     "Mall": ("COMMERCIAL","RETAIL","ESTABLISHMENTSINMALLS"),
-    "Gas Godown": ("COMMERCIAL", "OTHERCOMMERCIALSUBMINOR", "OTHERCOMMERCIAL"),
-    "Godown": ("COMMERCIAL", "OTHERCOMMERCIALSUBMINOR", "OTHERCOMMERCIAL"),
+    "Gas Godown": ("INDUSTRIAL","WAREHOUSE","WAREHOUSE"),
+    "Godown": ("INDUSTRIAL","WAREHOUSE","WAREHOUSE"),
+    "Educational Institutions": ("INSTITUTIONAL","EDUCATIONAL","OTHEREDUCATIONAL"),
     "Commercial Buildings except Multiplexes, Malls, Marriage Palaces,Residential House":("COMMERCIAL", "OTHERCOMMERCIALSUBMINOR", "OTHERCOMMERCIAL")
 
 
