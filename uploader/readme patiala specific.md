@@ -20,6 +20,10 @@ As Patiala records received contains manual enteries also for session 2018-19 or
     5. CLIENT_DATA_PROPERTY_ID seems to be sequatial return id, therefore this column is being copied and used as Aknwoledgement number
        assuming higher this acknowledgement number, latest is the return date
     6. update session column to 4-digit years by using formula ="20"&SUBSTITUTE(AM160,"-","-20") e.g. 2021-22 to 2021-2022
+    7. Some of Government Building received as ownertype(land_used_type) "Citizen Propery", it should be updated to Government property as under
+        select * from patiala_pt_legacy_data 
+        --update patiala_pt_legacy_data set landusedtype='State Government Property' 
+        where buildingcategory='Government building' and landusedtype='Citizen Property'
        
        
        achieving above corrections in excel:
@@ -445,7 +449,7 @@ To Settle the demands as all migrated assessments are to be set as paid
 -------------------------------------------------------------
 
 --update egbs_demanddetail_v1 set collectionamount=taxamount 
-select count(*) from egbs_demanddetail_v1
+--select count(*) from egbs_demanddetail_v1
 where demandid in (select d.id
 from egbs_demanddetail_v1 dd, egbs_demand_v1 d
 where dd.demandid=d.id
@@ -463,3 +467,8 @@ All Properties with RENTED units are made under status INWORKFLOW so that needed
 where id in (select propertyid from eg_pt_unit where occupancytype='RENTED' and active='true') and status='ACTIVE' and tenantid='pb.patiala' and source='LEGACY_RECORD' and channel='LEGACY_MIGRATION' and createdtime>1622268421628  
 
 
+----------------------------------------
+To set height above 36ft for all Flats
+----------------------------------------
+update eg_pt_property set additionaldetails=cast(concat('{ "heightAbove36Feet": true,',substring(additionaldetails::text,2)) as json)
+where additionaldetails->'legacyInfo'->>'buildingcategory'='Flat' and tenantid='pb.patiala' and channel='LEGACY_MIGRATION' and source='LEGACY_RECORD' and status='ACTIVE'
