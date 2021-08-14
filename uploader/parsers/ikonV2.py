@@ -295,9 +295,9 @@ class IkonPropertyV2(Property):
         if property_type == None and context["buildingcategory"] == "Residential House":
             self.usage_category_major = "RESIDENTIAL"  # OBSOLETE in v2
             self.usage_category = "RESIDENTIAL"
-        elif property_type == None and context["buildingcategory"] == "Government building":
+        elif context["buildingcategory"] == "Government building":
             self.usage_category_major = "NONRESIDENTIAL"  # OBSOLETE in v2
-            self.usage_category = "NONRESIDENTIAL.OTHERS"
+            self.usage_category = "NONRESIDENTIAL.INSTITUTIONAL"
         elif property_type == "COM" and (context["buildingcategory"] == "Industrial" or context["buildingcategory"]== "Godown" or context["buildingcategory"] == "Gas Godown"):
             self.usage_category_major = "NONRESIDENTIAL"  # OBSOLETE in v2
             self.usage_category = "NONRESIDENTIAL.INDUSTRIAL"
@@ -506,12 +506,8 @@ BD_UNIT_MAP = {
     "Gas Godown": ("INDUSTRIAL","WAREHOUSE","WAREHOUSE"),
     "Godown": ("INDUSTRIAL","WAREHOUSE","WAREHOUSE"),
     "Educational Institutions": ("INSTITUTIONAL","EDUCATIONAL","OTHEREDUCATIONAL"),
+    "Government building": ("INSTITUTIONAL","OTHERINSTITUTIONALSUBMINOR","OTHERINSTITUTIONAL"),
     "Commercial Buildings except Multiplexes, Malls, Marriage Palaces,Residential House":("COMMERCIAL", "OTHERCOMMERCIALSUBMINOR", "OTHERCOMMERCIAL")
-
-
-
-
-
 }
 
 
