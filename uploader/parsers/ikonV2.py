@@ -19,7 +19,7 @@ class IkonPropertyV2(Property):
         #})]
 
     def process_additional_details(self, context):
-        self.old_property_id = "RID{}".format(context["returnid"])
+        self.old_property_id = "{}".format(context["returnid"])
         self.additional_details = {
             "legacyInfo": {
                 "returnid": context["returnid"],
@@ -31,7 +31,10 @@ class IkonPropertyV2(Property):
                 "exemptioncategory": context["exemptioncategory"],
                 "totalcoveredarea": context["totalcoveredarea"],
                 "grosstax": context["grosstax"],
-                "amountpaid": context["amountpaid"]
+                "amountpaid": context["amountpaid"],
+                "waterconnectionno": context["waterconnectionno"],
+                "electricityconnectionno": context["electricityconnectionno"],
+                "address": context["address"]
             }
         }
 
@@ -99,20 +102,21 @@ class IkonPropertyV2(Property):
 
             building_category = context["buildingcategory"]
 
-            for floor, covered_area, usage, occupancy, _, tax in parse_flat_information(context["floor"]):
+            for floor, covered_area, usage in parse_flat_information(context["floor"]):
                 if "- VACANT" in floor.upper():
                     continue   # to skip any vacant area on floor (Basicaly ...Ground Floor - Vacant... floors are not to be added and assumed to be calculated automaticaly)
                 construction_detail=ConstructionDetail(built_up_area=float(covered_area) / 9)
                 unit = Unit(floor_no=get_floor_number(floor),
-                            occupancy_type=OC_MAP[occupancy],
+                            #occupancy_type=OC_MAP[occupancy],
+                            occupancy_type="SELFOCCUPIED",
                             construction_detail=construction_detail)
 
-                if OC_MAP[occupancy] == "RENTED":
-                    unit.arv = round(float(tax) * (100 / 7.5), 2)
+                #if OC_MAP[occupancy] == "RENTED":
+                #    unit.arv = round(float(tax) * (100 / 7.5), 2)
 
-                    if unit.arv == 0:
-                        unit.arv = None
-                        unit.occupancy_type = "UNOCCUPIED"
+                #     if unit.arv == 0:
+                #        unit.arv = None
+                #        unit.occupancy_type = "UNOCCUPIED"
 
                 floor_set.add(get_floor_number(floor))
 
@@ -161,7 +165,9 @@ class IkonPropertyV2(Property):
         #     func(self, context)
         # else:
         #     raise Exception("No Mapping function")
-        financial_year = context["session"].replace("-20", "-")
+
+        #FinancialYear not available in survey Data
+        #financial_year = context["session"].replace("-20", "-")
         self.process_owner_information(context)
         self.process_exemption(context)
         self.process_property_type(context)
@@ -184,6 +190,7 @@ class IkonPropertyV2(Property):
             "Residential": "RESIDENTIAL",
             "0": "RESIDENTIAL",
             "Industrial": "NONRESIDENTIAL",
+            "INDUSTRY":"NONRESIDENTIAL",
             "Non-Residential": "NONRESIDENTIAL"
         }
         self.usage_category_minor = "None"
@@ -248,7 +255,10 @@ class IkonPropertyV2(Property):
 
         ecat = context["exemptioncategory"]
 
-        if ecat == "Joint Owners - Both/All Widows":
+        if ecat == None:
+            for owner in self.owners:
+                owner.owner_type = "NONE"
+        elif ecat == "Joint Owners - Both/All Widows":
             for owner in self.owners:
                 owner.owner_type = "WIDOW"
         else:
@@ -312,6 +322,7 @@ BD_UNIT_MAP = {
     # "Government buildings, including buildings of Government Undertakings, Board or Corporation": "",
     "Industrial (any manufacturing unit), educational institutions, and godowns": (
         "INDUSTRIAL", "OTHERINDUSTRIALSUBMINOR", "OTHERINDUSTRIAL"),
+    "INDUSTRY":("INDUSTRIAL", "OTHERINDUSTRIALSUBMINOR", "OTHERINDUSTRIAL"),
     "Commercial buildings including Restaurants (except multiplexes, malls, marriage palaces)": (
         "COMMERCIAL", "OTHERCOMMERCIALSUBMINOR", "OTHERCOMMERCIAL"),
     "Flats": (""),
@@ -364,7 +375,7 @@ def parse_owners_information(text):
 def parse_flat_information(text):
     # text = text or """Ground Floor / 1100.00 / Residential / Self Occupied / Pucca / 939.58Ground Floor - Vacant In Use / 250.00 / Residential / Self Occupied / Pucca / 185.421st Floor / 1100.00 / Residential / Self Occupied / Pucca / 613.252nd Floor / 1100.00 / Residential / Self Occupied / Pucca / 368.50"""
 
-    info = list(map(str.strip, owner_pattern.split(text, 5)))
+    info = list(map(str.strip, owner_pattern.split(text, 3)))
     floors = []
     while "/" in info[-1]:
         last_element = info[-1].strip().strip("/").strip()
@@ -392,7 +403,7 @@ def parse_flat_information(text):
             info = None
             break
 
-    if info and len(info) == 6:
+    if info and len(info) == 3:
         floors.append(info)
 
     return floors

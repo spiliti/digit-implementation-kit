@@ -60,6 +60,8 @@ CREATE TABLE public.jalandhar_pt_legacy_data (
     buildingcategory text,
     session text,
     remarks text,
+    waterconnectionno text,
+    electricityconnectionno text,
     ----------------
     uuid text default uuid_generate_v4(),
     previous_returnid text,

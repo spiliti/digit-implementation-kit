@@ -10,16 +10,16 @@ from config import config
 from uploader.parsers.ikonV2 import IkonPropertyV2
 
 
-dbname = os.getenv("DB_NAME", "mohali_legacy_data")
+dbname = os.getenv("DB_NAME", "kurali_survey_data")
 dbuser = os.getenv("DB_USER", "postgres")
 dbpassword = os.getenv("DB_PASSWORD", "postgres")
-tenant = os.getenv("TENANT", "pb.mohali")
-city = os.getenv("CITY", "MOHALI")
+tenant = os.getenv("TENANT", "pb.kurali")
+city = os.getenv("CITY", "KURALI")
 host = os.getenv("DB_HOST", "localhost")
-batch = os.getenv("BATCH_NAME", "18")
-table_name = os.getenv("TABLE_NAME", "mohali_pt_legacy_data")
+batch = os.getenv("BATCH_NAME", "11")
+table_name = os.getenv("TABLE_NAME", "kurali_pt_legacy_data")
 default_phone = os.getenv("DEFAULT_PHONE", "9999999999")
-default_locality = os.getenv("DEFAULT_LOCALITY", "SUN62")
+default_locality = os.getenv("DEFAULT_LOCALITY", "KLFP1")
 batch_size = os.getenv("BATCH_SIZE", "100")
 
 #dry_run = (False, True)[os.getenv("DRY_RUN", "True").lower() == "true"]
@@ -72,7 +72,10 @@ def main():
                 p = IkonPropertyV2()
                 p.process_record(json_data, tenant, city)
                 #pd = p.property_details[0]
-                financial_year =  json_data["session"].replace("-20", "-")
+
+               #financial year not available in survey data
+               # financial_year =  json_data["session"].replace("-20", "-")
+
                 # p.tenant_id = tenant
                 # for o in pd.owners:
                 #     o.mobile_number = default_phone
@@ -107,62 +110,62 @@ def main():
                     # to Approve property as in V2 newly created property is in INWROFLOW status
                     # search property by acknowledgement number
 
-                    request_data = {
-                        "RequestInfo": {
-                                           "authToken": access_token
-                                       }
-                                   }
-
-                    response = requests.post(
-                        urljoin(config.HOST, "/property-services/property/_search?acknowledgementIds="+ack_no+"&tenantId=pb.mohali"),
-                        json=request_data)
-
-                    res=response.json()
-
-                    property_added=res["Properties"][0]
-                    property_added["0"] = {"comment": "", "assignee": []}
-                    property_added["workflow"] = {"id": None, "tenantId": "pb.mohali", "businessService": "PT.CREATE","businessId": ack_no, "action": "APPROVE", "moduleName": "PT","state": None, "comment": None, "documents": None, "assignes": None}
-
-                    request_data = {
-                        "RequestInfo": {
-                            "authToken": access_token
-                        },
-
-                        "Property": property_added
-                    }
-                    # print(json.dumps(request_data, indent=2))
-                    response = requests.post(
-                        urljoin(config.HOST, "/property-services/property/_update?tenantId="),
-                        json=request_data)
-
-                    res = response.json()
-                    update_db_record(uuid, upload_response_workflow=json.dumps(res))  #storing response updating property status as ACTIVATE to approve property
-                    print("APPROVED", pt_id)
-
-                    # to create assessment
-                    request_data={"RequestInfo": {"apiId": "Rainmaker", "ver": ".01", "ts": "", "action": "_create", "did": "1",
-                                  "key": "", "msgId": "20170310130900|en_IN",
-                                  "authToken": access_token
-                                                  },
-                                  "Assessment": {"tenantId": "pb.mohali", "propertyId": pt_id,
-                                  "financialYear": financial_year, "assessmentDate": time.time(),
-                                  "source": "LEGACY_RECORD", "channel": "LEGACY_MIGRATION", "additionalDetails": {}}}
-                    response = requests.post(
-                        urljoin(config.HOST, "/property-services/assessment/_create?tenantId=pb.mohali"),
-                        json=request_data)
-
-                    res = response.json()
-                    update_db_record(uuid, upload_response_assessment=json.dumps(res))  # creating assessment and storeing the response
-                    print("Assessment Created", pt_id)
-
-                else:
-                    # Some error has occurred
-                    print("Error occured while uploading data")
-                    print(json.dumps(req, indent=1))
-                    print(json.dumps(res, indent=1))
-                    update_db_record(uuid, upload_status="ERROR",
-                                     upload_response=json.dumps(res),
-                                     req_json=json.dumps(req))
+                #     request_data = {
+                #         "RequestInfo": {
+                #                            "authToken": access_token
+                #                        }
+                #                    }
+                #
+                #     response = requests.post(
+                #         urljoin(config.HOST, "/property-services/property/_search?acknowledgementIds="+ack_no+"&tenantId=pb.mohali"),
+                #         json=request_data)
+                #
+                #     res=response.json()
+                #
+                #     property_added=res["Properties"][0]
+                #     property_added["0"] = {"comment": "", "assignee": []}
+                #     property_added["workflow"] = {"id": None, "tenantId": "pb.mohali", "businessService": "PT.CREATE","businessId": ack_no, "action": "APPROVE", "moduleName": "PT","state": None, "comment": None, "documents": None, "assignes": None}
+                #
+                #     request_data = {
+                #         "RequestInfo": {
+                #             "authToken": access_token
+                #         },
+                #
+                #         "Property": property_added
+                #     }
+                #     # print(json.dumps(request_data, indent=2))
+                #     response = requests.post(
+                #         urljoin(config.HOST, "/property-services/property/_update?tenantId="),
+                #         json=request_data)
+                #
+                #     res = response.json()
+                #     update_db_record(uuid, upload_response_workflow=json.dumps(res))  #storing response updating property status as ACTIVATE to approve property
+                #     print("APPROVED", pt_id)
+                #
+                #     # to create assessment
+                #     request_data={"RequestInfo": {"apiId": "Rainmaker", "ver": ".01", "ts": "", "action": "_create", "did": "1",
+                #                   "key": "", "msgId": "20170310130900|en_IN",
+                #                   "authToken": access_token
+                #                                   },
+                #                   "Assessment": {"tenantId": "pb.mohali", "propertyId": pt_id,
+                #                   "financialYear": financial_year, "assessmentDate": time.time(),
+                #                   "source": "LEGACY_RECORD", "channel": "LEGACY_MIGRATION", "additionalDetails": {}}}
+                #     response = requests.post(
+                #         urljoin(config.HOST, "/property-services/assessment/_create?tenantId=pb.mohali"),
+                #         json=request_data)
+                #
+                #     res = response.json()
+                #     update_db_record(uuid, upload_response_assessment=json.dumps(res))  # creating assessment and storeing the response
+                #     print("Assessment Created", pt_id)
+                #
+                # else:
+                #     # Some error has occurred
+                #     print("Error occured while uploading data")
+                #     print(json.dumps(req, indent=1))
+                #     print(json.dumps(res, indent=1))
+                #     update_db_record(uuid, upload_status="ERROR",
+                #                      upload_response=json.dumps(res),
+                #                      req_json=json.dumps(req))
             except Exception as ex:
                 import traceback
                 traceback.print_exc()
