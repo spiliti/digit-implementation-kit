@@ -104,6 +104,14 @@ CREATE TABLE patiala_pt_legacy_data (
     taxamt text,
     amountpaid text,
     paymentmode text,
+    
+    chequeno text,
+    chequerealisationdate text,
+    chequestatus,
+    remarks,
+    pos_tid,
+    pos_invoiceno,
+    
     transactionid text,
     bank text,
     g8bookno text,
@@ -179,15 +187,35 @@ REINDEX TABLE patiala_pt_legacy_data;
 
 
 ```csv
-returnid,previous_returnid,acknowledgementno,entrydate,zone,sector,colony,houseno,owner,leasedetail,address,floor,unbuiltarea,exemptioncategory,landusedtype,usage,plotarea,totalcoveredarea,grosstax,firecharges,interestamt,penalty,rebate,exemptionamt,taxamt,paymentmode,transactionid,g8bookno,g8receiptno,paymentdate,propertytype,session,buildingcategory,client_data_id,height_above_36ft
+returnid,previous_returnid,acknowledgementno,entrydate,zone,sector,colony,houseno,owner,leasedetail,address,floor,unbuiltarea,exemptioncategory,landusedtype,usage,plotarea,totalcoveredarea,grosstax,firecharges,interestamt,penalty,rebate,exemptionamt,taxamt,paymentmode,   
+    chequeno text,
+    chequerealisationdate text,
+    chequestatus text,
+    cheque_remarks text, 
+    pos_tid text,
+    pos_invoiceno text,    
+,transactionid,g8bookno,g8receiptno,paymentdate,propertytype,session,buildingcategory,client_data_id,height_above_36ft
 ```
 
 
 ```pgsql
-COPY patiala_pt_legacy_data(returnid,previous_returnid,acknowledgementno,entrydate,zone,sector,colony,houseno,owner,leasedetail,address,floor,unbuiltarea,exemptioncategory,landusedtype,usage,plotarea,totalcoveredarea,grosstax,firecharges,interestamt,penalty,rebate,exemptionamt,taxamt,paymentmode,transactionid,g8bookno,g8receiptno,paymentdate,propertytype,session,buildingcategory,client_data_id,height_above_36ft)
+COPY patiala_pt_legacy_data(returnid,previous_returnid,acknowledgementno,entrydate,zone,sector,colony,houseno,owner,leasedetail,address,floor,unbuiltarea,exemptioncategory,landusedtype,usage,plotarea,totalcoveredarea,grosstax,firecharges,interestamt,penalty,rebate,exemptionamt,taxamt,paymentmode,
+    chequeno text,
+    chequerealisationdate text,
+    chequestatus text,
+    cheque_remarks text, 
+    pos_tid text,
+    pos_invoiceno text,transactionid,g8bookno,g8receiptno,paymentdate,propertytype,session,buildingcategory,client_data_id,height_above_36ft)
 FROM '/tmp/combined.csv'
 WITH (format csv, QUOTE '"', header);
 ```
+
+
+Some of Government Building received as ownertype(land_used_type) "Citizen Propery", it should be updated to Government property as under
+        select * from patiala_pt_legacy_data 
+        --update patiala_pt_legacy_data set landusedtype='State Government Property' 
+        where buildingcategory='Government building' and landusedtype='Citizen Property'
+       
 
 
 Now that the data is imported, we want to be able to identify each record using a unique identifier, so we assign a `uuid` to each record
@@ -472,3 +500,4 @@ To set height above 36ft for all Flats
 ----------------------------------------
 update eg_pt_property set additionaldetails=cast(concat('{ "heightAbove36Feet": true,',substring(additionaldetails::text,2)) as json)
 where additionaldetails->'legacyInfo'->>'buildingcategory'='Flat' and tenantid='pb.patiala' and channel='LEGACY_MIGRATION' and source='LEGACY_RECORD' and status='ACTIVE'
+and createdtime>1633709138000  

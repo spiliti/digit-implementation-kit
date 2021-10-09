@@ -19,7 +19,7 @@ class IkonPropertyV2(Property):
         #})]
 
     def process_additional_details(self, context):
-        self.old_property_id = "RID{}".format(context["returnid"])
+        self.old_property_id = "UPIN{}".format(context["returnid"])
         self.additional_details = {
             "legacyInfo": {
                 "returnid": context["returnid"],
