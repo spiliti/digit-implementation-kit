@@ -188,6 +188,8 @@ class IkonPropertyV2(Property):
                             occupancy_type=OC_MAP[occupancy],
                             construction_detail=construction_detail)
 
+                if unproductive_month == "12":
+                    unit.occupancy_type = "UNOCCUPIED"
                 if OC_MAP[occupancy] == "RENTED":
                     unit.arv = round(float(tax) * (100 / 7.5), 2)
 
